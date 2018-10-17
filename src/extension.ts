@@ -92,9 +92,7 @@ function languageServerCommand(
   parseVMargs(params, vmargs);
   params.push('-jar', serverJar, '' + port);
   params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjs.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarphp.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarpython.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarts.jar')));
+  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'cachequality.jar')));
   return { command: javaExecutablePath, args: params };
 }
 
@@ -168,11 +166,8 @@ export function activate(context: VSCode.ExtensionContext) {
     documentSelector: [
       'javascript',
       'javascriptreact',
-      'php',
-      'python',
-      'typescript',
-      'typescriptreact',
-      'vue'
+      'objectscript',
+      'cacheobjectscript'
     ],
     synchronize: {
       configurationSection: 'sonarlint'

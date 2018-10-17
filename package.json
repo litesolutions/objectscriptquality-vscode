@@ -28,11 +28,8 @@
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:typescript",
-    "onLanguage:typescriptreact",
-    "onLanguage:python",
-    "onLanguage:php",
-    "onLanguage:vue"
+    "onLanguage:objectscript",
+    "onLanguage:cacheobjectscript"
   ],
   "extensionDependency": [
     "typescript"

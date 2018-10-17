@@ -5,9 +5,6 @@ const request = require('request');
 
 const languageServerVersion = '3.9.0.1892';
 const sonarJsVersion = '4.2.0.6476';
-const sonarPhpVersion = '2.14.0.3569';
-const sonarPythonVersion = '1.10.0.2131';
-const sonarTsVersion = '1.7.0.2893';
 
 if (!fs.existsSync('server')) {
   fs.mkdirSync('server');
@@ -24,18 +21,6 @@ downloadIfNeeded(
 downloadIfNeeded(
   `https://repox.sonarsource.com/sonarsource/org/sonarsource/javascript/sonar-javascript-plugin/${sonarJsVersion}/sonar-javascript-plugin-${sonarJsVersion}.jar`,
   'analyzers/sonarjs.jar'
-);
-downloadIfNeeded(
-  `https://repox.sonarsource.com/sonarsource/org/sonarsource/php/sonar-php-plugin/${sonarPhpVersion}/sonar-php-plugin-${sonarPhpVersion}.jar`,
-  'analyzers/sonarphp.jar'
-);
-downloadIfNeeded(
-  `https://repox.sonarsource.com/sonarsource/org/sonarsource/python/sonar-python-plugin/${sonarPythonVersion}/sonar-python-plugin-${sonarPythonVersion}.jar`,
-  'analyzers/sonarpython.jar'
-);
-downloadIfNeeded(
-  `https://repox.sonarsource.com/sonarsource/org/sonarsource/typescript/sonar-typescript-plugin/${sonarTsVersion}/sonar-typescript-plugin-${sonarTsVersion}.jar`,
-  'analyzers/sonarts.jar'
 );
 
 function downloadIfNeeded(url, dest) {
