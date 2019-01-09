@@ -28,13 +28,25 @@
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:objectscript",
-    "onLanguage:cacheobjectscript"
+    "onLanguage:objectscript"
   ],
   "extensionDependency": [
     "typescript"
   ],
   "contributes": {
+    "languages": [
+			{
+				"id": "objectscript",
+        "aliases": [
+          "ObjectScript"
+        ],
+        "extensions": [
+          ".cls",
+          ".mac",
+          ".int"
+        ]
+			}
+		],
     "configuration": {
       "type": "object",
       "title": "SonarLint",

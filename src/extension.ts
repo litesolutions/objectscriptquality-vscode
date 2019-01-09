@@ -166,8 +166,7 @@ export function activate(context: VSCode.ExtensionContext) {
     documentSelector: [
       'javascript',
       'javascriptreact',
-      'objectscript',
-      'cacheobjectscript'
+      'objectscript'
     ],
     synchronize: {
       configurationSection: 'sonarlint'
