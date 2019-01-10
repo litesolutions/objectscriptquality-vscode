@@ -1,10 +1,10 @@
 # SonarLint for Visual Studio Code
 
-SonarLint is an IDE extension that helps you detect and fix quality issues as you write code. Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code. You can get it directly from the VS Code Marketplace and it will then detect new bugs and quality issues as you code (JavaScript, TypeScript, PHP and Python)
+SonarLint is an IDE extension that helps you detect and fix quality issues as you write code. Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code. You can get it directly from the VS Code Marketplace and it will then detect new bugs and quality issues as you code (ObjectScript and JavaScript)
 
 ## How it works
 
-Simply open a JS, TS, Python or PHP file, start coding, and you will start seeing issues reported by SonarLint. Issues are highlighted in your code, and also listed in the 'Problems' panel.
+Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by SonarLint. Issues are highlighted in your code, and also listed in the 'Problems' panel.
 
 ![sonarlint on-the-fly](images/sonarlint-vscode.gif)
 
@@ -16,12 +16,10 @@ You can access the detailed rule description directly from your editor, using th
 
 Check the rules to see what SonarLint can do for you:
 
+- [ObjectScript rules](https://www.cachequality.com/docs/cachequality-release/rules)
 - [JavaScript rules](https://rules.sonarsource.com/javascript)
-- [TypeScript rules](https://rules.sonarsource.com/typescript)
-- [Python rules](https://rules.sonarsource.com/python)
-- [PHP rules](https://rules.sonarsource.com/php)
 
-You will benefit from the following code analyzers: [SonarJS](https://redirect.sonarsource.com/plugins/javascript.html), [SonarTS](https://redirect.sonarsource.com/plugins/typescript.html), [SonarPython](https://redirect.sonarsource.com/plugins/python.html) and [SonarPHP](https://redirect.sonarsource.com/plugins/php.html)
+You will benefit from the following code analyzers: [CacheQuality](https://www.cachequality.com) and [SonarJS](https://redirect.sonarsource.com/plugins/javascript.html)
 
 ## Requirements
 
@@ -49,6 +47,4 @@ SonarLint for Visual Studio Code is open source under the LGPL v3 license. Feel 
 
 ## Feedback
 
-The preferred way to discuss about SonarLint is by posting on the [SonarSource Community Forum](https://community.sonarsource.com/). Feel free to ask questions, report issues, and give suggestions.
-
-Issue tracker: https://jira.sonarsource.com/browse/SLVSCODE
+The preferred way to discuss about VS SonarLint for CacheQuality is by posting on the [Project Issues tab](https://github.com/litesolutions/cachequality-vscode/issues). Feel free to ask questions, report issues, and give suggestions.
