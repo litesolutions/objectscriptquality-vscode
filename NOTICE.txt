@@ -1,6 +1,6 @@
-SonarLint for Visual Studio Code
-Copyright (C) 2017-2018 SonarSource SA
-mailto:info AT sonarsource DOT com
+SonarLint for Visual Studio Code with CQ support
+Copyright (C) 2019 Lite Solutions SL
+mailto:info AT cachequality DOT com
 
 This product includes software developed at
 SonarSource (http://www.sonarsource.com/).
