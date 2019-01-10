@@ -15,10 +15,6 @@ if (!fs.existsSync('analyzers')) {
 }
 
 downloadIfNeeded(
-  `https://repox.sonarsource.com/sonarsource/org/sonarsource/sonarlint/core/sonarlint-language-server/${languageServerVersion}/sonarlint-language-server-${languageServerVersion}.jar`,
-  'server/sonarlint-ls.jar'
-);
-downloadIfNeeded(
   `https://repox.sonarsource.com/sonarsource/org/sonarsource/javascript/sonar-javascript-plugin/${sonarJsVersion}/sonar-javascript-plugin-${sonarJsVersion}.jar`,
   'analyzers/sonarjs.jar'
 );
