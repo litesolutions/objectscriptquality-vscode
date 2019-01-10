@@ -1,17 +1,14 @@
 {
-  "name": "sonarlint-vscode",
-  "displayName": "SonarLint",
-  "description": "SonarLint is an IDE extension that helps you detect and fix quality issues as you write code in JavaScript, TypeScript, Python and PHP.",
-  "version": "1.6.0-SNAPSHOT",
+  "name": "sonarlint-cq-vscode",
+  "displayName": "SonarLint for CacheQuality",
+  "description": "SonarLint is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
+  "version": "1.0.0",
   "icon": "images/sonarlint_wave_128px.png",
-  "publisher": "SonarSource",
-  "homepage": "http://www.sonarlint.org",
+  "publisher": "Lite Solutions",
+  "homepage": "https://www.cachequality.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/SonarSource/sonarlint-vscode.git"
-  },
-  "bugs": {
-    "url": "https://jira.sonarsource.com/browse/SLVSCODE"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
@@ -24,7 +21,7 @@
     "code analysis",
     "linters"
   ],
-  "qna": "https://community.sonarsource.com/c/help/sl",
+  "qna": "https://www.cachequality.com/documentation",
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
