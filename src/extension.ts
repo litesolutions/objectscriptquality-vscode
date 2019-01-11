@@ -179,7 +179,7 @@ export function activate(context: VSCode.ExtensionContext) {
         analyzerProperties: configuration && configuration.get('analyzerProperties'),
         telemetryStorage: Path.resolve(context.extensionPath, '..', 'sonarlint_usage'),
         productName: 'SonarLint VSCode',
-        productVersion: VSCode.extensions.getExtension('SonarSource.sonarlint-vscode').packageJSON
+        productVersion: VSCode.extensions.getExtension('litesolutions-es.sonarlint-cq-vscode').packageJSON
           .version,
         disableTelemetry: configuration ? configuration.get('disableTelemetry', false) : false,
         typeScriptLocation: tsPath ? Path.dirname(Path.dirname(tsPath)) : undefined,
@@ -196,7 +196,7 @@ export function activate(context: VSCode.ExtensionContext) {
 
   // Create the language client and start the client.
   languageClient = new LanguageClient(
-    'sonarlint-vscode',
+    'sonarlint-cq-vscode',
     'SonarLint Language Server',
     serverOptions,
     clientOptions
