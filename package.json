@@ -3,12 +3,12 @@
   "displayName": "SonarLint for CacheQuality",
   "description": "SonarLint is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
   "version": "1.0.0",
-  "icon": "images/sonarlint_wave_128px.png",
+  "icon": "images/sonarlint_cq_logo.png",
   "publisher": "Lite Solutions",
   "homepage": "https://www.cachequality.com/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SonarSource/sonarlint-vscode.git"
+    "url": "https://github.com/litesolutions/cachequality-vscode.git"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
