@@ -25,7 +25,8 @@
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:objectscript"
+    "onLanguage:objectscript",
+    "onLanguage:objectscript-class"
   ],
   "extensionDependency": [
     "typescript"
@@ -38,11 +39,19 @@
           "ObjectScript"
         ],
         "extensions": [
-          ".cls",
           ".mac",
           ".int"
         ]
-			}
+      },
+      {
+				"id": "objectscript-class",
+        "aliases": [
+          "ObjectScript-class"
+        ],
+        "extensions": [
+          ".cls"
+        ]
+      }
 		],
     "configuration": {
       "type": "object",
@@ -163,10 +172,10 @@
     "find-java-home": "0.2.0",
     "open": "0.0.5",
     "path-exists": "3.0.0",
-    "vscode": "1.1.18",
     "vscode-languageclient": "4.4.0"
   },
   "devDependencies": {
+    "vscode": "1.1.18",
     "@types/mocha": "^2.2.32",
     "@types/node": "^6.0.40",
     "crypto": "0.0.3",
