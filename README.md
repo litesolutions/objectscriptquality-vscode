@@ -6,11 +6,13 @@ SonarLint is an IDE extension that helps you detect and fix quality issues as yo
 
 Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by SonarLint. Issues are highlighted in your code, and also listed in the 'Problems' panel.
 
-![sonarlint on-the-fly](images/sonarlint-vscode.gif)
+![sonarlint on-the-fly](images/onthefly3.gif)
+
+![sonarlint on-the-fly](images/onthefly2.gif)
 
 You can access the detailed rule description directly from your editor, using the provided contextual menu.
 
-![rule description](images/sonarlint-rule-description.gif)
+![rule description](images/ruledescription.gif)
 
 ## Rules
 
