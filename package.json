@@ -1,8 +1,8 @@
 {
   "name": "sonarlint-cq-vscode",
-  "displayName": "SonarLint for CacheQuality",
-  "description": "SonarLint is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
-  "version": "1.0.3",
+  "displayName": "CacheQuality for VSCode",
+  "description": "CacheQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
+  "version": "1.0.4",
   "icon": "images/sonarlint_cq_logo.png",
   "publisher": "litesolutions-es",
   "homepage": "https://www.cachequality.com/",

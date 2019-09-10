@@ -1,3 +1,6 @@
+## 1.0.4
+*  Update descriptions
+
 ## 1.0.3
 *  CacheQuality 2.1.0
 

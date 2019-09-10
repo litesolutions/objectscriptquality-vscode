@@ -1,10 +1,10 @@
-# SonarLint for Visual Studio Code
+# CacheQuality for Visual Studio Code
 
-SonarLint is an IDE extension that helps you detect and fix quality issues as you write code. Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code. You can get it directly from the VS Code Marketplace and it will then detect new bugs and quality issues as you code (ObjectScript and JavaScript)
+CacheQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code. Like a spell checker,  this plugin  squiggles flaws so they can be fixed before committing code. You can get it directly from the VS Code Marketplace and it will then detect new bugs and quality issues as you code (ObjectScript and JavaScript)
 
 ## How it works
 
-Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by SonarLint. Issues are highlighted in your code, and also listed in the 'Problems' panel.
+Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by CacheQuality. Issues are highlighted in your code, and also listed in the 'Problems' panel.
 
 ![sonarlint on-the-fly](images/onthefly3.gif)
 
@@ -45,8 +45,12 @@ For security reasons, the token should not be stored in SCM with workspace setti
 
 ## Contributions and license
 
-SonarLint for Visual Studio Code is open source under the LGPL v3 license. Feel free to submit Pull Requests.
+CachéQuality for VSCode is a software distributed under freeware basis. This software is composed of the CachéQuality plugin and a modified version of SonarLint.
+
+SonarLint is a trademark of SonarSource S.A., and is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version. See the GNU Lesser General Public License for more details.
+
+CachéQuality for VSCode is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ## Feedback
 
-The preferred way to discuss about VS SonarLint for CacheQuality is by posting on the [Project Issues tab](https://github.com/litesolutions/cachequality-vscode/issues). Feel free to ask questions, report issues, and give suggestions.
+The preferred way to discuss about CacheQuality for VSCode is by posting on the [Project Issues tab](https://github.com/litesolutions/cachequality-vscode/issues). Feel free to ask questions, report issues, and give suggestions.
