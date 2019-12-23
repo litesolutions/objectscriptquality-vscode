@@ -1,14 +1,14 @@
 {
-  "name": "sonarlint-cq-vscode",
-  "displayName": "CacheQuality for VSCode",
-  "description": "CacheQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
+  "name": "objectscriptquality-vscode",
+  "displayName": "objectcriptQuality for VSCode",
+  "description": "objectcriptQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
   "version": "1.0.4",
   "icon": "images/sonarlint_cq_logo.png",
   "publisher": "litesolutions-es",
-  "homepage": "https://www.cachequality.com/",
+  "homepage": "https://www.objectcriptquality.com/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/litesolutions/cachequality-vscode.git"
+    "url": "https://github.com/litesolutions/objectscriptquality-vscode.git"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
@@ -21,7 +21,7 @@
     "code analysis",
     "linters"
   ],
-  "qna": "https://www.cachequality.com/documentation",
+  "qna": "https://www.objectscriptquality.com/documentation",
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
@@ -33,8 +33,8 @@
   ],
   "contributes": {
     "languages": [
-			{
-				"id": "objectscript",
+      {
+        "id": "objectscript",
         "aliases": [
           "ObjectScript"
         ],
@@ -44,7 +44,7 @@
         ]
       },
       {
-				"id": "objectscript-class",
+        "id": "objectscript-class",
         "aliases": [
           "ObjectScript-class"
         ],
@@ -52,7 +52,7 @@
           ".cls"
         ]
       }
-		],
+    ],
     "configuration": {
       "type": "object",
       "title": "SonarLint",
@@ -84,13 +84,13 @@
           "default": false,
           "description": "Disable sending anonymous usage statistics"
         },
-        "sonarlint.ls.javaHome": {
+        "objectscriptQuality.ls.javaHome": {
           "type": [
             "string",
             "null"
           ],
           "default": null,
-          "description": "Specifies the folder path to the JRE (8 or more recent) used to launch the SonarLint Language Server.\nOn Windows, backslashes must be escaped, i.e.\n\"sonarlint.ls.javaHome\":\"C:\\\\Program Files\\\\Java\\\\jdk1.8.0_161\"",
+          "description": "Specifies the folder path to the JRE (8 or more recent) used to launch the SonarLint Language Server.\nOn Windows, backslashes must be escaped, i.e.\n\"objectscriptQuality.ls.javaHome\":\"C:\\\\Program Files\\\\Java\\\\jdk1.8.0_161\"",
           "scope": "window"
         },
         "sonarlint.ls.vmargs": {
@@ -153,7 +153,7 @@
     "commands": [
       {
         "command": "SonarLint/UpdateServersAndBinding",
-        "title": "Update SonarLint binding to SonarQube/SonarCloud"
+        "title": "Update objectscriptQuality binding to SonarQube/SonarCloud"
       }
     ]
   },

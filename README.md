@@ -27,10 +27,10 @@ You will benefit from the following code analyzers: [objectscriptQuality](https:
 
 The only thing you need is a Java Runtime (JRE) 8 installed on your computer.
 
-objectscriptQuality should automatically find it but you can also explicitly set the path where the JRE is installed using the 'sonarlint.ls.javaHome' variable in VS Code settings. For example:
+objectscriptQuality should automatically find it but you can also explicitly set the path where the JRE is installed using the 'objectscriptQuality.ls.javaHome' variable in VS Code settings. For example:
 
     {
-        "sonarlint.ls.javaHome": "C:\Program Files\Java\jre1.8.0_131"
+        "objectscriptQuality.ls.javaHome": "C:\Program Files\Java\jre1.8.0_131"
     }
 
 ### Connected mode
@@ -39,7 +39,7 @@ You can connect objectscriptQuality to SonarQube >= 5.6 or SonarCloud to benefit
 
 To configure the connection, have a look at objectscriptQuality in default user settings.
 
-If you change something on the server such as the quality profile, you can trigger an update of the local cache using the "Update SonarLint binding to SonarQube/SonarCloud" command on the command palette (search for "sonarlint").
+If you change something on the server such as the quality profile, you can trigger an update of the local cache using the "Update objectscriptQuality binding to SonarQube/SonarCloud" command on the command palette (search for "sonarlint").
 
 For security reasons, the token should not be stored in SCM with workspace settings.
 

@@ -146,7 +146,7 @@ gulp.task('sonarqube', callback => {
 
 function runSonnarQubeScanner(callback, options = {}) {
   const commonOptions = {
-    'sonar.projectKey': 'org.sonarsource.sonarlint.vscode:sonarlint-cq-vscode',
+    'sonar.projectKey': 'org.sonarsource.sonarlint.vscode:objectscriptquality-vscode',
     'sonar.projectName': 'SonarLint for VSCode',
     'sonar.projectVersion': snapshotVersion(),
     'sonar.exclusions': 'build/**, out/**, coverage/**, node_modules/**, **/node_modules/**',
