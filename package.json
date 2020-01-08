@@ -1,11 +1,11 @@
 {
   "name": "objectscriptquality-vscode",
-  "displayName": "objectcriptQuality for VSCode",
-  "description": "objectcriptQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
-  "version": "1.0.4",
+  "displayName": "objectscriptQuality for VSCode",
+  "description": "objectscriptQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
+  "version": "2.0.1",
   "icon": "images/sonarlint_cq_logo.png",
   "publisher": "litesolutions-es",
-  "homepage": "https://www.objectcriptquality.com/",
+  "homepage": "https://www.objectscriptquality.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/litesolutions/objectscriptquality-vscode.git"
