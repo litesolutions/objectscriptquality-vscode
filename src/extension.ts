@@ -254,21 +254,15 @@ export function activate(context: VSCode.ExtensionContext) {
         ruleType,
         ruleSeverity
       );
-      VSCode.commands
-        .executeCommand(
-          'vscode.previewHtml',
-          showRuleUri,
-          VSCode.ViewColumn.Two,
-          'SonarLint Rule Description'
-        )
-        .then(
-          success => {
-            provider.update(showRuleUri);
-          },
-          reason => {
-            VSCode.window.showErrorMessage(reason);
-          }
-        );
+      const panel = VSCode.window.createWebviewPanel(
+        'sonarlintRuleDesc',
+        'SonarLint Rule Description',
+        VSCode.ViewColumn.Two,
+        {
+          enableScripts: false
+        }
+      );
+      panel.webview.html = ruleDescPanelContent;
     }
   );
 

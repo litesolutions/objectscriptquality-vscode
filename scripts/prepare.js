@@ -15,7 +15,7 @@ if (!fs.existsSync('analyzers')) {
 }
 
 downloadIfNeeded(
-  `http://repo.maven.apache.org/maven2/org/sonarsource/javascript/sonar-javascript-plugin/${sonarJsVersion}/sonar-javascript-plugin-${sonarJsVersion}.jar`,
+  `https://repo.maven.apache.org/maven2/org/sonarsource/javascript/sonar-javascript-plugin/${sonarJsVersion}/sonar-javascript-plugin-${sonarJsVersion}.jar`,
   'analyzers/sonarjs.jar'
 );
 
