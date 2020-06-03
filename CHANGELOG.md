@@ -1,3 +1,7 @@
+## 2.1.0
+* OjectscriptQuality 3.1.0
+* Display detailed rule rescription 
+
 ## 1.0.4
 *  Update descriptions
 
