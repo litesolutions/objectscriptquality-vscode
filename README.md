@@ -1,35 +1,33 @@
-# SonarLint for Visual Studio Code
+# objectscriptQuality for Visual Studio Code
 
-SonarLint is a free IDE extension that lets you fix coding issues before they exist! Like a spell checker, SonarLint highlights Bugs and Security Vulnerabilities as you write code, with clear remediation guidance so you can fix them before the code is even committed. SonarLint in VS Code supports analysis of JavaScript, TypeScript, Python, Java, HTML & PHP code, and you can install it directly from the VS Code Marketplace!
+objectscriptQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code. Like a spell checker,  this plugin  squiggles flaws so they can be fixed before committing code. You can get it directly from the VS Code Marketplace and it will then detect new bugs and quality issues as you code (ObjectScript and JavaScript)
 
 ## How it works
 
-Simply open a JS, TS, Python, Java, HTML or PHP file, start coding, and you will start seeing issues reported by SonarLint. Issues are highlighted in your code, and also listed in the 'Problems' panel.
+Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by objectscriptQuality. Issues are highlighted in your code, and also listed in the 'Problems' panel.
 
-![sonarlint on-the-fly](images/sonarlint-vscode.gif)
+![Checks on the fly](images/onthefly3.gif)
+
+![Checks on the fly](images/onthefly2.gif)
 
 You can access the detailed rule description directly from your editor, using the provided contextual menu.
 
-![rule description](images/sonarlint-rule-description.gif)
+![rule description](images/ruledescription.gif)
 
 ## Static Analysis Rules
 
-Out of the box, SonarLint automatically checks your code against the following rules:
+Check the rules to see what objectscriptQuality can do for you:
 
+- [ObjectScript rules](https://www.objectscriptQuality.com/docs/objectscriptquality-release/rules)
 - [JavaScript rules](https://rules.sonarsource.com/javascript)
-- [TypeScript rules](https://rules.sonarsource.com/typescript)
-- [Python rules](https://rules.sonarsource.com/python)
-- [Java rules](https://rules.sonarsource.com/java)
-- [HTML rules](https://rules.sonarsource.com/html)
-- [PHP rules](https://rules.sonarsource.com/php)
 
-The full list of available rules is visible in the "SonarLint Rules" view in the explorer, where you can activate and deactivate rules to match your conventions. SonarLint will also show a code action on each issue to quickly deactivate the corresponding rule.
+You will benefit from the following code analyzers: [objectscriptQuality](https://www.objectscriptQuality.com) and [SonarJS](https://redirect.sonarsource.com/plugins/javascript.html)
 
 ## Requirements
 
 The SonarLint language server needs a Java Runtime (JRE) 8 or 11. If one is already installed on your computer, SonarLint should automatically find and use it.
 
-If a suitable JRE cannot be found at the usual places, SonarLint will ask for your permission to download and manage its own version.
+objectscriptQuality should automatically find it but you can also explicitly set the path where the JRE is installed using the 'objectscriptQuality.ls.javaHome' variable in VS Code settings. For example:
 
 Finally, you can explicitly set the path where the JRE is installed using the `sonarlint.ls.javaHome` variable in VS Code settings. For instance:
 
@@ -94,10 +92,7 @@ Example:
 
     // In project1/.vscode/settings.json
     {
-        "sonarlint.connectedMode.project": {
-            "connectionId": "mySonar",
-            "projectKey": "the-project-key-on-sq"
-        }
+        "objectscriptQuality.ls.javaHome": "C:\Program Files\Java\jre1.8.0_131"
     }
 
     // In project2/.vscode/settings.json
@@ -122,20 +117,22 @@ With that in mind, if you would like to submit a code contribution, please creat
 
 Make sure that you follow our [code style](https://github.com/SonarSource/sonar-developer-toolset#code-style) and all tests are passing.
 
-## Have Question or Feedback?
+You can connect objectscriptQuality to SonarQube >= 5.6 or SonarCloud to benefit from the same rules and settings that are used to inspect your project on the server. objectscriptQuality then hides in VSCode the issues that are marked as **Won’t Fix** or **False Positive**.
 
-For SonarLint support questions ("How do I?", "I got this error, why?", ...), please first read the [FAQ](https://community.sonarsource.com/t/frequently-asked-questions/7204) and then head to the [SonarSource forum](https://community.sonarsource.com/c/help/sl). There are chances that a question similar to yours has already been answered.
+To configure the connection, have a look at objectscriptQuality in default user settings.
 
-Be aware that this forum is a community, so the standard pleasantries ("Hi", "Thanks", ...) are expected. And if you don't get an answer to your thread, you should sit on your hands for at least three days before bumping it. Operators are not standing by. :-)
+If you change something on the server such as the quality profile, you can trigger an update of the local cache using the "Update objectscriptQuality binding to SonarQube/SonarCloud" command on the command palette (search for "sonarlint").
 
 Issue tracker (readonly): https://jira.sonarsource.com/browse/SLVSCODE
 
 ## License
 
-Copyright 2017-2020 SonarSource.
+objectscriptQuality for VSCode is a software distributed under freeware basis. This software is composed of the objectscriptQuality plugin and a modified version of SonarLint.
 
-Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
+SonarLint is a trademark of SonarSource S.A., and is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version. See the GNU Lesser General Public License for more details.
 
-## Data and telemetry
+CachéQuality for VSCode is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-This extension collects anonymous usage data and sends it to SonarSource to help improve SonarLint functionality.  No source code nor IP address is collected, and SonarSource does not share the data with anyone else. Collection of telemetry is controlled via the setting: `sonarlint.disableTelemetry`. Click [here](telemetry-sample.md) to see a sample of the data that are collected.
+## Feedback
+
+The preferred way to discuss about objectscriptQuality for VSCode is by posting on the [Project Issues tab](https://github.com/litesolutions/objectscriptquality-vscode/issues). Feel free to ask questions, report issues, and give suggestions.

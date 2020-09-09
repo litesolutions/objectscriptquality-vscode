@@ -8,10 +8,7 @@
   "homepage": "http://www.sonarlint.org",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SonarSource/sonarlint-vscode.git"
-  },
-  "bugs": {
-    "url": "https://jira.sonarsource.com/browse/SLVSCODE"
+    "url": "https://github.com/litesolutions/objectscriptquality-vscode.git"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
@@ -24,7 +21,7 @@
     "code analysis",
     "linters"
   ],
-  "qna": "https://community.sonarsource.com/c/help/sl",
+  "qna": "https://www.objectscriptquality.com/documentation",
   "activationEvents": [
     "onLanguage:java",
     "onLanguage:javascript",
@@ -46,6 +43,27 @@
     "vscode.typescript-language-features"
   ],
   "contributes": {
+    "languages": [
+      {
+        "id": "objectscript",
+        "aliases": [
+          "ObjectScript"
+        ],
+        "extensions": [
+          ".mac",
+          ".int"
+        ]
+      },
+      {
+        "id": "objectscript-class",
+        "aliases": [
+          "ObjectScript-class"
+        ],
+        "extensions": [
+          ".cls"
+        ]
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "SonarLint",
