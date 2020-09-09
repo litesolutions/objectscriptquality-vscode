@@ -27,19 +27,10 @@ const DEBUG = typeof v8debug === 'object' || util.startedInDebugMode(process);
 let currentConfig: VSCode.WorkspaceConfiguration;
 
 const DOCUMENT_SELECTOR = [
-  { scheme: 'file', language: 'java' },
   { scheme: 'file', language: 'javascript' },
   { scheme: 'file', language: 'javascriptreact' },
-  { scheme: 'file', language: 'php' },
-  { scheme: 'file', language: 'python' },
-  { scheme: 'file', language: 'typescript' },
-  { scheme: 'file', language: 'typescriptreact' },
-  { scheme: 'file', language: 'vue' },
-  { scheme: 'file', language: 'html' },
-  { scheme: 'file', language: 'jsp' },
-  { scheme: 'file', language: 'apex' },
-  { scheme: 'file', language: 'plsql' },
-  { scheme: 'file', language: 'oraclesql' }
+  { scheme: 'file', language: 'objectscript' },
+  { scheme: 'file', language: 'objectscript-class' }
 ];
 
 let sonarlintOutput: VSCode.OutputChannel;
@@ -126,11 +117,8 @@ function languageServerCommand(
   const vmargs = getSonarLintConfiguration().get('ls.vmargs', '');
   parseVMargs(params, vmargs);
   params.push('-jar', serverJar, '' + port);
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjava.jar')));
   params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjs.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarphp.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarpython.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarhtml.jar')));
+  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'objectscriptquality.jar')));
   return { command: javaExecutablePath, args: params };
 }
 
@@ -248,7 +236,7 @@ export function activate(context: VSCode.ExtensionContext) {
   // Create the language client and start the client.
   // id parameter is used to load 'sonarlint.trace.server' configuration
   languageClient = new SonarLintExtendedLanguageClient(
-    'sonarlint',
+    'objectscriptquality-vscode',
     'SonarLint Language Server',
     serverOptions,
     clientOptions

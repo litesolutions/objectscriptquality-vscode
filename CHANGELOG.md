@@ -1,3 +1,8 @@
+## 2.2.0
+* Based on Sonarlint VSCode 1.17.0
+* Updated SonarLint Language Server to version 1.5
+* Updated SonarLint Core to version 4.13.0.19712
+
 ## 2.1.0
 * OjectscriptQuality 3.1.0
 * Display detailed rule rescription 

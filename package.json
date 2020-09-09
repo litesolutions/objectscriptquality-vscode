@@ -1,18 +1,18 @@
 {
-  "name": "sonarlint-vscode",
-  "displayName": "SonarLint",
-  "description": "SonarLint is an IDE extension that helps you detect and fix quality issues as you write code in JavaScript, TypeScript, Python, Java, HTML and PHP.",
-  "version": "1.18.0-SNAPSHOT",
-  "icon": "images/sonarlint_wave_128px.png",
-  "publisher": "SonarSource",
-  "homepage": "http://www.sonarlint.org",
+  "name": "objectscriptquality-vscode",
+  "displayName": "objectscriptQuality for VSCode",
+  "description": "objectscriptQuality for VSCode is an IDE extension that helps you detect and fix quality issues as you write code in ObjectScript and JavaScript.",
+  "version": "2.1.1",
+  "icon": "images/sonarlint_cq_logo.png",
+  "publisher": "litesolutions-es",
+  "homepage": "https://www.objectscriptquality.com/",
   "repository": {
     "type": "git",
     "url": "https://github.com/litesolutions/objectscriptquality-vscode.git"
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
-    "vscode": "^1.37.0"
+    "vscode": "^1.25.0"
   },
   "categories": [
     "Linters"
@@ -23,19 +23,10 @@
   ],
   "qna": "https://www.objectscriptquality.com/documentation",
   "activationEvents": [
-    "onLanguage:java",
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
-    "onLanguage:typescript",
-    "onLanguage:typescriptreact",
-    "onLanguage:python",
-    "onLanguage:php",
-    "onLanguage:vue",
-    "onLanguage:html",
-    "onLanguage:jsp",
-    "onLanguage:apex",
-    "onLanguage:plsql",
-    "onLanguage:oraclesql",
+    "onLanguage:objectscript",
+    "onLanguage:objectscript-class",
     "onCommand:SonarLint.UpdateAllBindings",
     "onView:SonarLint.AllRules"
   ],
