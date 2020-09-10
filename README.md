@@ -43,6 +43,16 @@ If you change something on the server such as the quality profile, you can trigg
 
 For security reasons, the token should not be stored in SCM with workspace settings.
 
+### Deactivate rules
+
+Open the SonarLint Rules tab on the Browser panel and select the rule you want to modify and you will see the rule description on the right panel. On the very same line you selected, it will appear an icon to disable (![Deactivate rule](images/vscode_extension_settings_rules_disable.png)) or enable (![Activate rule](images/vscode_extension_settings_rules_enable.png)) the rule.
+
+![Deactivate rule from SonarLint rules tab](images/vscode_extension_sonarlint_rules_tab.png)
+
+You can also do it directly from the Problems panel, when a file has been analyzed
+
+![Deactivate rule from Problems panel](images/vscode_exclude_rule_from_list.png)
+
 ## Contributions and license
 
 objectscriptQuality for VSCode is a software distributed under freeware basis. This software is composed of the objectscriptQuality plugin and a modified version of SonarLint.
