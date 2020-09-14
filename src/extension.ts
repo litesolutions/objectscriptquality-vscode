@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2018 SonarSource SA
+ * Copyright (C) 2017-2020 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -10,45 +10,57 @@ import * as Path from 'path';
 import * as FS from 'fs';
 import * as Net from 'net';
 import * as ChildProcess from 'child_process';
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  StreamInfo,
-  ExecuteCommandRequest,
-  ExecuteCommandParams
-} from 'vscode-languageclient';
-import * as open from 'open';
-import * as http from 'http';
-import * as requirements from './requirements';
-import { RequirementsData } from './requirements';
-import { connect } from 'tls';
+import { LanguageClientOptions, StreamInfo } from 'vscode-languageclient';
 
-declare var v8debug;
-const DEBUG = typeof v8debug === 'object' || startedInDebugMode();
-var oldConfig;
+import * as util from './util';
+import { AllRulesTreeDataProvider, Rule, RuleNode, ConfigLevel } from './rules';
+import { Commands } from './commands';
+import { SonarLintExtendedLanguageClient } from './client';
+import { resolveRequirements, RequirementsData, installManagedJre } from './requirements';
+import { computeRuleDescPanelContent } from './rulepanel';
+import { ShowRuleDescriptionRequest, GetJavaConfigRequest } from './protocol';
+import { installClasspathListener, getJavaConfig } from './java';
+import { code2ProtocolConverter, protocol2CodeConverter } from './uri';
 
-const updateServersAndBindingStorageCommandName = 'SonarLint/UpdateServersAndBinding';
+declare let v8debug: object;
+const DEBUG = typeof v8debug === 'object' || util.startedInDebugMode(process);
+let currentConfig: VSCode.WorkspaceConfiguration;
 
-const connectedModeServersSectionName = 'connectedMode.servers';
-const connectedModeProjectSectionName = 'connectedMode.project';
+const DOCUMENT_SELECTOR = [
+  { scheme: 'file', language: 'javascript' },
+  { scheme: 'file', language: 'javascriptreact' },
+  { scheme: 'file', language: 'objectscript' },
+  { scheme: 'file', language: 'objectscript-class' }
+];
+
+let sonarlintOutput: VSCode.OutputChannel;
+let ruleDescriptionPanel: VSCode.WebviewPanel;
+let languageClient: SonarLintExtendedLanguageClient;
+
+export function logToSonarLintOutput(message) {
+  if (sonarlintOutput) {
+    sonarlintOutput.appendLine(message);
+  }
+}
 
 function runJavaServer(context: VSCode.ExtensionContext): Thenable<StreamInfo> {
-  return requirements
-    .resolveRequirements()
+  return resolveRequirements(context)
     .catch(error => {
       //show error
       VSCode.window.showErrorMessage(error.message, error.label).then(selection => {
-        if (error.label && error.label === selection && error.openUrl) {
-          VSCode.commands.executeCommand('vscode.open', error.openUrl);
+        if (error.label && error.label === selection && error.command) {
+          VSCode.commands.executeCommand(error.command, error.commandParam);
         }
       });
       // rethrow to disrupt the chain.
       throw error;
     })
     .then(requirements => {
-      return new Promise<StreamInfo>(function(resolve, reject) {
+      return new Promise<StreamInfo>((resolve, reject) => {
         const server = Net.createServer(socket => {
-          console.log(`Child process connected on port ${server.address().port}`);
+          if (isVerboseEnabled()) {
+            logToSonarLintOutput(`Child process connected on port ${(server.address() as Net.AddressInfo).port}`);
+          }
           resolve({
             reader: socket,
             writer: socket
@@ -56,23 +68,37 @@ function runJavaServer(context: VSCode.ExtensionContext): Thenable<StreamInfo> {
         });
         server.listen(0, () => {
           // Start the child java process
-          const { command, args } = languageServerCommand(
-            context,
-            requirements,
-            server.address().port
-          );
-          console.log(`Executing ${command} ${args.join(' ')}`);
+          const port = (server.address() as Net.AddressInfo).port;
+          const { command, args } = languageServerCommand(context, requirements, port);
+          if (isVerboseEnabled()) {
+            logToSonarLintOutput(`Executing ${command} ${args.join(' ')}`);
+          }
           const process = ChildProcess.spawn(command, args);
 
-          process.stdout.on('data', function(data) {
-            console.log(data.toString());
+          process.stdout.on('data', function (data) {
+            logWithPrefix(data, '[stdout]');
           });
-          process.stderr.on('data', function(data) {
-            console.error(data.toString());
+          process.stderr.on('data', function (data) {
+            logWithPrefix(data, '[stderr]');
           });
         });
       });
     });
+}
+
+function logWithPrefix(data, prefix) {
+  if (isVerboseEnabled()) {
+    const lines: string[] = data.toString().split(/\r\n|\r|\n/);
+    lines.forEach((l: string) => {
+      if (l.length > 0) {
+        logToSonarLintOutput(`${prefix} ${l}`);
+      }
+    });
+  }
+}
+
+function isVerboseEnabled(): boolean {
+  return currentConfig.get('output.showVerboseLogs', false);
 }
 
 function languageServerCommand(
@@ -81,7 +107,7 @@ function languageServerCommand(
   port: number
 ): { command: string; args: string[] } {
   const serverJar = Path.resolve(context.extensionPath, 'server', 'sonarlint-ls.jar');
-  const javaExecutablePath = Path.resolve(requirements.java_home + '/bin/java');
+  const javaExecutablePath = Path.resolve(requirements.javaHome + '/bin/java');
 
   const params = [];
   if (DEBUG) {
@@ -92,13 +118,11 @@ function languageServerCommand(
   parseVMargs(params, vmargs);
   params.push('-jar', serverJar, '' + port);
   params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjs.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarphp.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarpython.jar')));
-  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarts.jar')));
+  params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'objectscriptquality.jar')));
   return { command: javaExecutablePath, args: params };
 }
 
-function toUrl(filePath) {
+export function toUrl(filePath: string) {
   let pathName = Path.resolve(filePath).replace(/\\/g, '/');
 
   // Windows drive letter must be prefixed with a slash
@@ -122,19 +146,13 @@ function resolveInAnyWorkspaceFolder(tsdkPathSetting) {
   return undefined;
 }
 
-function findTypeScriptLocation() {
-  const tsExt = VSCode.extensions.getExtension('vscode.typescript');
+function findTypeScriptLocation(): string | undefined {
+  const tsExt = VSCode.extensions.getExtension('vscode.typescript-language-features');
   if (tsExt) {
-    const bundledTypeScriptPath = Path.resolve(
-      tsExt.extensionPath,
-      '..',
-      'node_modules',
-      'typescript',
-      'lib'
-    );
+    const bundledTypeScriptPath = Path.resolve(tsExt.extensionPath, '..', 'node_modules', 'typescript', 'lib');
     if (!FS.existsSync(bundledTypeScriptPath)) {
-      console.warn(
-        `Unable to locate bundled TypeScript module in '${bundledTypeScriptPath}'. Please report this error to SonarLint project.`
+      logToSonarLintOutput(
+        `Unable to locate bundled TypeScript module in "${bundledTypeScriptPath}". Please report this error to SonarLint project.`
       );
     }
     const tsdkPathSetting = VSCode.workspace.getConfiguration('typescript').get('tsdk');
@@ -144,307 +162,198 @@ function findTypeScriptLocation() {
       if (configuredTsPath !== undefined) {
         return configuredTsPath;
       }
-      console.warn(
-        `Unable to locate TypeScript module in '${configuredTsPath}'. Falling back to the VSCode's one at '${bundledTypeScriptPath}'`
+      logToSonarLintOutput(
+        `Unable to locate TypeScript module in "${configuredTsPath}". Falling back to the VSCode"s one at "${bundledTypeScriptPath}"`
       );
     }
     return bundledTypeScriptPath;
   } else {
-    console.warn(
-      'Unable to locate TypeScript extension. TypeScript support in SonarLint might not work.'
-    );
+    logToSonarLintOutput('Unable to locate TypeScript extension. TypeScript support in SonarLint might not work.');
+    return undefined;
   }
 }
 
-let languageClient: LanguageClient;
+function toggleRule(level: ConfigLevel) {
+  return (ruleKey: string | RuleNode) => {
+    const configuration = getSonarLintConfiguration();
+    const rules = configuration.get('rules') || {};
+
+    if (typeof ruleKey === 'string') {
+      // This is when a rule is deactivated from a code action, and we only have the key, not the default activation.
+      // So level should be "off" regardless of the default activation.
+      rules[ruleKey] = { level };
+    } else {
+      // When a rule is toggled from the list of rules, we can be smarter!
+      const { key, activeByDefault } = ruleKey.rule;
+      if ((level === 'on' && !activeByDefault) || (level === 'off' && activeByDefault)) {
+        // Override default
+        rules[key] = { level };
+      } else {
+        // Back to default
+        rules[key] = undefined;
+      }
+    }
+    return configuration.update('rules', rules, VSCode.ConfigurationTarget.Global);
+  };
+}
 
 export function activate(context: VSCode.ExtensionContext) {
+  currentConfig = getSonarLintConfiguration();
+
+  util.setExtensionContext(context);
+  sonarlintOutput = VSCode.window.createOutputChannel('SonarLint');
+  context.subscriptions.push(sonarlintOutput);
+
   const serverOptions = () => runJavaServer(context);
 
   const tsPath = findTypeScriptLocation();
 
   // Options to control the language client
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [
-      'javascript',
-      'javascriptreact',
-      'php',
-      'python',
-      'typescript',
-      'typescriptreact',
-      'vue'
-    ],
+    documentSelector: DOCUMENT_SELECTOR,
     synchronize: {
       configurationSection: 'sonarlint'
     },
+    uriConverters: {
+      code2Protocol: code2ProtocolConverter,
+      protocol2Code: protocol2CodeConverter
+    },
     diagnosticCollectionName: 'sonarlint',
     initializationOptions: () => {
-      const configuration = getSonarLintConfiguration();
       return {
-        testFilePattern: configuration && configuration.get('testFilePattern'),
-        analyzerProperties: configuration && configuration.get('analyzerProperties'),
+        productKey: 'vscode',
         telemetryStorage: Path.resolve(context.extensionPath, '..', 'sonarlint_usage'),
         productName: 'SonarLint VSCode',
-        productVersion: VSCode.extensions.getExtension('SonarSource.sonarlint-vscode').packageJSON
-          .version,
-        disableTelemetry: configuration ? configuration.get('disableTelemetry', false) : false,
-        typeScriptLocation: tsPath ? Path.dirname(Path.dirname(tsPath)) : undefined,
-        includeRuleDetailsInCodeAction: true,
-        connectedModeServers: configuration && configuration.get(connectedModeServersSectionName),
-        connectedModeProject: configuration && configuration.get(connectedModeProjectSectionName)
+        productVersion: util.packageJson.version,
+        ideVersion: VSCode.version,
+        typeScriptLocation: tsPath ? Path.dirname(Path.dirname(tsPath)) : undefined
       };
     },
-    outputChannelName: 'SonarLint',
+    outputChannel: sonarlintOutput,
     revealOutputChannelOn: 4 // never
   };
 
-  oldConfig = getSonarLintConfiguration();
-
   // Create the language client and start the client.
-  languageClient = new LanguageClient(
-    'sonarlint-vscode',
+  // id parameter is used to load 'sonarlint.trace.server' configuration
+  languageClient = new SonarLintExtendedLanguageClient(
+    'objectscriptquality-vscode',
     'SonarLint Language Server',
     serverOptions,
     clientOptions
   );
 
-  const disposable = languageClient.start();
+  languageClient.onReady().then(() => installCustomRequestHandlers(context));
 
-  // Push the disposable to the context's subscriptions so that the
-  // client can be deactivated on extension deactivation
-  context.subscriptions.push(disposable);
+  const allRulesTreeDataProvider = new AllRulesTreeDataProvider(() =>
+    languageClient.onReady().then(() => languageClient.listAllRules())
+  );
+  const allRulesView = VSCode.window.createTreeView('SonarLint.AllRules', {
+    treeDataProvider: allRulesTreeDataProvider
+  });
+  context.subscriptions.push(allRulesView);
+
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.DEACTIVATE_RULE, toggleRule('off')));
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.ACTIVATE_RULE, toggleRule('on')));
+
+  context.subscriptions.push(
+    VSCode.commands.registerCommand(Commands.SHOW_ALL_RULES, () => allRulesTreeDataProvider.filter(null))
+  );
+  context.subscriptions.push(
+    VSCode.commands.registerCommand(Commands.SHOW_ACTIVE_RULES, () => allRulesTreeDataProvider.filter('on'))
+  );
+  context.subscriptions.push(
+    VSCode.commands.registerCommand(Commands.SHOW_INACTIVE_RULES, () => allRulesTreeDataProvider.filter('off'))
+  );
+  context.subscriptions.push(
+    VSCode.commands.registerCommand(Commands.FIND_RULE_BY_KEY, () => {
+      VSCode.window
+        .showInputBox({
+          prompt: 'Rule Key',
+          validateInput: value => allRulesTreeDataProvider.checkRuleExists(value)
+        })
+        .then(key => {
+          // Reset rules view filter
+          VSCode.commands.executeCommand(Commands.SHOW_ALL_RULES).then(() =>
+            allRulesView.reveal(new RuleNode({ key: key.toUpperCase() } as Rule), {
+              focus: true,
+              expand: true
+            })
+          );
+        });
+    })
+  );
+
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.INSTALL_MANAGED_JRE, installManagedJre));
+
+  VSCode.workspace.onDidChangeConfiguration(async event => {
+    if (event.affectsConfiguration('sonarlint.rules')) {
+      allRulesTreeDataProvider.refresh();
+    }
+  });
+
+  languageClient.start();
+
   context.subscriptions.push(onConfigurationChange());
 
-  let ruleDescPanelContent = 'No description';
-
-  class TextDocumentContentProvider implements VSCode.TextDocumentContentProvider {
-    private readonly _onDidChange = new VSCode.EventEmitter<VSCode.Uri>();
-
-    get onDidChange(): VSCode.Event<VSCode.Uri> {
-      return this._onDidChange.event;
-    }
-
-    public update(uri: VSCode.Uri) {
-      this._onDidChange.fire(uri);
-    }
-
-    public provideTextDocumentContent(uri: VSCode.Uri): string {
-      return ruleDescPanelContent;
-    }
-  }
-
-  const provider = new TextDocumentContentProvider();
-  const registration = VSCode.workspace.registerTextDocumentContentProvider(
-    'sonarlint-rule',
-    provider
+  context.subscriptions.push(
+    VSCode.extensions.onDidChange(() => {
+      installClasspathListener(languageClient);
+    })
   );
-  context.subscriptions.push(registration);
+  installClasspathListener(languageClient);
+}
 
-  const showRuleUri = VSCode.Uri.parse('sonarlint-rule://show');
-
-  const openRuleCommand = VSCode.commands.registerCommand(
-    'SonarLint.OpenRuleDesc',
-    (
-      ruleKey: string,
-      ruleName: string,
-      htmlDesc: string,
-      ruleType: string,
-      ruleSeverity: string
-    ) => {
-      ruleDescPanelContent = computeRuleDescPanelContent(
-        context,
-        ruleKey,
-        ruleName,
-        htmlDesc,
-        ruleType,
-        ruleSeverity
+function installCustomRequestHandlers(context: VSCode.ExtensionContext) {
+  languageClient.onRequest(ShowRuleDescriptionRequest.type, params => {
+    const ruleDescPanelContent = computeRuleDescPanelContent(context, params);
+    if (!ruleDescriptionPanel) {
+      ruleDescriptionPanel = VSCode.window.createWebviewPanel(
+        'sonarlint.RuleDesc',
+        'SonarLint Rule Description',
+        VSCode.ViewColumn.Two,
+        {
+          enableScripts: false
+        }
       );
-      VSCode.commands
-        .executeCommand(
-          'vscode.previewHtml',
-          showRuleUri,
-          VSCode.ViewColumn.Two,
-          'SonarLint Rule Description'
-        )
-        .then(
-          success => {
-            provider.update(showRuleUri);
-          },
-          reason => {
-            VSCode.window.showErrorMessage(reason);
-          }
-        );
+      ruleDescriptionPanel.onDidDispose(
+        () => {
+          ruleDescriptionPanel = undefined;
+        },
+        null,
+        context.subscriptions
+      );
     }
-  );
-
-  context.subscriptions.push(openRuleCommand);
-
-  const updateServersAndBindingStorageCommandCallback = () => {
-    updateServerStorage()
-      .then(updateProjectBinding)
-      .then(() => {
-        VSCode.window.showInformationMessage('SonarLint server storage updated');
-      });
-  };
-  const updateServerStorageCommand = VSCode.commands.registerCommand(
-    updateServersAndBindingStorageCommandName,
-    updateServersAndBindingStorageCommandCallback
-  );
-  context.subscriptions.push(updateServerStorageCommand);
-}
-
-function updateServerStorage(): Thenable<void> {
-  const params: ExecuteCommandParams = {
-    command: 'SonarLint.UpdateServerStorage',
-    arguments: getSonarLintConfiguration().get(connectedModeServersSectionName)
-  };
-  return languageClient.sendRequest(ExecuteCommandRequest.type, params).then(
-    success => {},
-    reason => {
-      VSCode.window.showWarningMessage('Failed to update SonarLint server storage');
-    }
-  );
-}
-
-function updateProjectBinding(): Thenable<void> {
-  const params: ExecuteCommandParams = {
-    command: 'SonarLint.UpdateProjectBinding',
-    arguments: getSonarLintConfiguration().get(connectedModeProjectSectionName)
-  };
-  return languageClient.sendRequest(ExecuteCommandRequest.type, params).then(
-    success => {},
-    reason => {
-      VSCode.window.showWarningMessage('Failed to update SonarLint project binding');
-    }
-  );
-}
-
-function computeRuleDescPanelContent(
-  context: VSCode.ExtensionContext,
-  ruleKey: string,
-  ruleName: string,
-  htmlDesc: string,
-  ruleType: string,
-  ruleSeverity: string
-) {
-  const severityImg = Path.resolve(
-    context.extensionPath,
-    'images',
-    'severity',
-    ruleSeverity.toLowerCase() + '.png'
-  );
-  const typeImg = Path.resolve(
-    context.extensionPath,
-    'images',
-    'type',
-    ruleType.toLowerCase() + '.png'
-  );
-  return `<!doctype html><html>
-		<head>
-		<style type="text/css">
-			body { 
-				font-family: Helvetica Neue,Segoe UI,Helvetica,Arial,sans-serif; 
-				font-size: 13px; line-height: 1.23076923; 
-			}
-			
-			h1 { font-size: 14px;font-weight: 500; }
-			h2 { line-height: 24px;}
-			a { border-bottom: 1px solid rgba(230, 230, 230, .1); color: #236a97; cursor: pointer; outline: none; text-decoration: none; transition: all .2s ease;}
-			
-			.rule-desc { line-height: 1.5;}
-			.rule-desc { line-height: 1.5;}
-			.rule-desc h2 { font-size: 16px; font-weight: 400;}
-			.rule-desc code { padding: .2em .45em; margin: 0; border-radius: 3px; white-space: nowrap;}
-			.rule-desc pre { padding: 10px; border-top: 1px solid rgba(230, 230, 230, .1); border-bottom: 1px solid rgba(230, 230, 230, .1); line-height: 18px; overflow: auto;}
-			.rule-desc code, .rule-desc pre { font-family: Consolas,Liberation Mono,Menlo,Courier,monospace; font-size: 12px;}
-			.rule-desc ul { padding-left: 40px; list-style: disc;}
-		</style>
-		</head>
-		<body><h1><big>${ruleName}</big> (${ruleKey})</h1>
-		<div>
-		<img style="padding-bottom: 1px;vertical-align: middle" width="16" height="16" alt="${ruleType}" src="data:image/gif;base64,${base64_encode(
-    typeImg
-  )}">&nbsp;
-		${clean(ruleType)}&nbsp;
-		<img style="padding-bottom: 1px;vertical-align: middle" width="16" height="16" alt="${ruleSeverity}" src="data:image/gif;base64,${base64_encode(
-    severityImg
-  )}">&nbsp;
-		${clean(ruleSeverity)}
-		</div>
-		<div class=\"rule-desc\">${htmlDesc}</div>
-		</body></html>`;
-}
-
-function clean(str: string) {
-  return capitalizeName(
-    str
-      .toLowerCase()
-      .split('_')
-      .join(' ')
-  );
-}
-
-function capitalizeName(name: string) {
-  return name.replace(/\b(\w)/g, s => s.toUpperCase());
-}
-
-function base64_encode(file) {
-  const bitmap = FS.readFileSync(file);
-  return new Buffer(bitmap).toString('base64');
-}
-
-function logNotification(message: string, ...items: string[]) {
-  return new Promise((resolve, reject) => {
-    console.log(message);
+    ruleDescriptionPanel.webview.html = ruleDescPanelContent;
+    ruleDescriptionPanel.reveal();
   });
+  languageClient.onRequest(GetJavaConfigRequest.type, fileUri => getJavaConfig(languageClient, fileUri));
 }
 
 function onConfigurationChange() {
-  return VSCode.workspace.onDidChangeConfiguration(params => {
+  return VSCode.workspace.onDidChangeConfiguration(event => {
+    if (!event.affectsConfiguration('sonarlint')) {
+      return;
+    }
     const newConfig = getSonarLintConfiguration();
 
-    const sonarLintLsConfigChanged = hasSonarLintLsConfigChanged(oldConfig, newConfig);
-    const serversChanged = !configKeyDeepEquals(
-      connectedModeServersSectionName,
-      oldConfig,
-      newConfig
-    );
-    const bindingChanged = !configKeyDeepEquals(
-      connectedModeProjectSectionName,
-      oldConfig,
-      newConfig
-    );
+    const sonarLintLsConfigChanged = hasSonarLintLsConfigChanged(currentConfig, newConfig);
 
     if (sonarLintLsConfigChanged) {
       const msg = 'SonarLint Language Server configuration changed, please restart VS Code.';
       const action = 'Restart Now';
       const restartId = 'workbench.action.reloadWindow';
-      oldConfig = newConfig;
+      currentConfig = newConfig;
       VSCode.window.showWarningMessage(msg, action).then(selection => {
         if (action === selection) {
           VSCode.commands.executeCommand(restartId);
         }
       });
     }
-
-    if (serversChanged && bindingChanged) {
-      oldConfig = newConfig;
-      updateServerStorage().then(updateProjectBinding);
-    } else if (serversChanged) {
-      oldConfig = newConfig;
-      updateServerStorage();
-    } else if (bindingChanged) {
-      oldConfig = newConfig;
-      updateProjectBinding();
-    }
   });
 }
 
 function hasSonarLintLsConfigChanged(oldConfig, newConfig) {
-  return (
-    !configKeyEquals('ls.javaHome', oldConfig, newConfig) ||
-    !configKeyEquals('ls.vmargs', oldConfig, newConfig)
-  );
+  return !configKeyEquals('ls.javaHome', oldConfig, newConfig) || !configKeyEquals('ls.vmargs', oldConfig, newConfig);
 }
 
 function configKeyEquals(key, oldConfig, newConfig) {
@@ -457,7 +366,7 @@ function configKeyDeepEquals(key, oldConfig, newConfig) {
   return JSON.stringify(oldConfig.get(key)) === JSON.stringify(newConfig.get(key));
 }
 
-export function parseVMargs(params: any[], vmargsLine: string) {
+export function parseVMargs(params: string[], vmargsLine: string) {
   if (!vmargsLine) {
     return;
   }
@@ -467,7 +376,7 @@ export function parseVMargs(params: any[], vmargsLine: string) {
   }
   vmargs.forEach(arg => {
     //remove all standalone double quotes
-    arg = arg.replace(/(\\)?"/g, function($0, $1) {
+    arg = arg.replace(/(\\)?"/g, function ($0, $1) {
       return $1 ? $0 : '';
     });
     //unescape all escaped double quotes
@@ -476,16 +385,6 @@ export function parseVMargs(params: any[], vmargsLine: string) {
       params.push(arg);
     }
   });
-}
-
-function startedInDebugMode(): boolean {
-  const args = (process as any).execArgv;
-  if (args) {
-    return args.some(
-      arg => /^--debug=?/.test(arg) || /^--debug-brk=?/.test(arg) || /^--inspect-brk=?/.test(arg)
-    );
-  }
-  return false;
 }
 
 function getSonarLintConfiguration(): VSCode.WorkspaceConfiguration {
