@@ -6,13 +6,13 @@ objectscriptQuality for VSCode is an IDE extension that helps you detect and fix
 
 Simply open a INT, MAC, CLS or JS file, start coding, and you will start seeing issues reported by objectscriptQuality. Issues are highlighted in your code, and also listed in the 'Problems' panel.
 
-![Checks on the fly](images/onthefly3.gif)
+![Checks on the fly](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/onthefly3.gif)
 
-![Checks on the fly](images/onthefly2.gif)
+![Checks on the fly](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/onthefly2.gif)
 
 You can access the detailed rule description directly from your editor, using the provided contextual menu.
 
-![rule description](images/ruledescription.gif)
+![rule description](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/ruledescription.gif)
 
 ## Rules
 
@@ -45,13 +45,13 @@ For security reasons, the token should not be stored in SCM with workspace setti
 
 ### Deactivate rules
 
-Open the SonarLint Rules tab on the Browser panel and select the rule you want to modify and you will see the rule description on the right panel. On the very same line you selected, it will appear an icon to disable (![Deactivate rule](images/vscode_extension_settings_rules_disable.png)) or enable (![Activate rule](images/vscode_extension_settings_rules_enable.png)) the rule.
+Open the SonarLint Rules tab on the Browser panel and select the rule you want to modify and you will see the rule description on the right panel. On the very same line you selected, it will appear an icon to disable (![Deactivate rule](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/vscode_extension_settings_rules_disable.png)) or enable (![Activate rule](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/vscode_extension_settings_rules_enable.png)) the rule.
 
-![Deactivate rule from SonarLint rules tab](images/vscode_extension_sonarlint_rules_tab.png)
+![Deactivate rule from SonarLint rules tab](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/vscode_extension_sonarlint_rules_tab.png)
 
 You can also do it directly from the Problems panel, when a file has been analyzed
 
-![Deactivate rule from Problems panel](images/vscode_exclude_rule_from_list.png)
+![Deactivate rule from Problems panel](https://raw.githubusercontent.com/litesolutions/objectscriptquality-vscode/objectscriptquality/images/vscode_exclude_rule_from_list.png)
 
 ## Contributions and license
 
