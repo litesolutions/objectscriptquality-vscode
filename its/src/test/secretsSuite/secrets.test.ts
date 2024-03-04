@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2021 SonarSource SA
+ * Copyright (C) 2017-2023 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -15,13 +15,18 @@ import * as os from 'os';
 // as well as import your extension to test it
 import * as vscode from 'vscode';
 
-import { waitForSonarLintDiagnostics } from '../common/util';
+import { activateAndShowOutput, waitForSonarLintDiagnostics } from '../common/util';
 
 const secretsFolderLocation = '../../../samples/sample-secrets';
-const secretIssueMessage = 'Make sure this AWS Secret Access Key is not disclosed.';
+const secretIssueMessage = 'Make sure this AWS Secret Access Key gets revoked, changed, and removed from the code.';
 
 suite('Secrets Test Suite', () => {
-  vscode.window.showInformationMessage('Starting Secrets tests.');
+  suiteSetup(async function () {
+    this.timeout(30 * 1000);
+    vscode.window.showInformationMessage('Starting Secrets tests.');
+
+    await activateAndShowOutput();
+  });
 
   test('should find secrets in yaml files', async function () {
     const fileUri = vscode.Uri.file(path.join(__dirname, secretsFolderLocation, 'file.yml'));
@@ -69,10 +74,13 @@ suite('Secrets Test Suite', () => {
 
   test('should not find secrets in SCM ignored files', async function () {
     const fileUri = vscode.Uri.file(path.join(__dirname, secretsFolderLocation, 'ignored_file.yml'));
-    await vscode.workspace.fs.writeFile(fileUri, new TextEncoder().encode('AWS_SECRET_KEY: h1ByXvzhN6O8/UQACtwMuSkjE5/oHmWG1MJziTDw'));
+    await vscode.workspace.fs.writeFile(
+      fileUri,
+      new TextEncoder().encode('AWS_SECRET_KEY: h1ByXvzhN6O8/UQACtwMuSkjE5/oHmWG1MJziTDw')
+    );
     await vscode.window.showTextDocument(fileUri);
 
-    const diags = await waitForSonarLintDiagnostics(fileUri, 5000);
+    const diags = await waitForSonarLintDiagnostics(fileUri, { timeoutMillis: 5000 });
 
     assert.deepStrictEqual(diags.length, 0);
   }).timeout(60 * 1000);
@@ -82,14 +90,15 @@ suite('Secrets Test Suite', () => {
     const tmpDirPath = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'tmp-'));
     const tmpFileUri = vscode.Uri.file(path.join(tmpDirPath, fileName));
     const tmpFileUrl = url.pathToFileURL(path.join(tmpDirPath, fileName));
-      await fs.promises.writeFile(tmpFileUrl, new TextEncoder()
-        .encode('AWS_SECRET_KEY: h1ByXvzhN6O8/UQACtwMuSkjE5/oHmWG1MJziTDw'));
+    await fs.promises.writeFile(
+      tmpFileUrl,
+      new TextEncoder().encode('AWS_SECRET_KEY: h1ByXvzhN6O8/UQACtwMuSkjE5/oHmWG1MJziTDw')
+    );
     await vscode.window.showTextDocument(tmpFileUri);
 
-    const diags = await waitForSonarLintDiagnostics(tmpFileUri, 5000);
+    const diags = await waitForSonarLintDiagnostics(tmpFileUri, { timeoutMillis: 5000 });
 
     assert.deepStrictEqual(diags.length, 1);
     assert.strictEqual(diags[0].message, secretIssueMessage);
   }).timeout(60 * 1000);
-
 });
