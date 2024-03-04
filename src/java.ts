@@ -1,17 +1,16 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 'use strict';
+import * as CompareVersions from 'compare-versions';
 import * as VSCode from 'vscode';
 import { Disposable } from 'vscode-languageclient';
-import * as CompareVersions from 'compare-versions';
-
+import { SonarLintExtendedLanguageClient } from './client';
 import { logToSonarLintOutput } from './extension';
 import { GetJavaConfigResponse } from './protocol';
-import { SonarLintExtendedLanguageClient } from './client';
 
 let classpathChangeListener: Disposable;
 let serverModeListener: Disposable;
@@ -36,7 +35,7 @@ export function installClasspathListener(languageClient: SonarLintExtendedLangua
       if (extensionApi && isJavaApiRecentEnough(extensionApi.apiVersion)) {
         const onDidClasspathUpdate: VSCode.Event<VSCode.Uri> = extensionApi.onDidClasspathUpdate;
         classpathChangeListener = onDidClasspathUpdate(function (uri) {
-          languageClient.onReady().then(() => languageClient.didClasspathUpdate(uri.toString()));
+          languageClient.onReady().then(() => languageClient.didClasspathUpdate(uri));
         });
       }
     }
@@ -101,15 +100,22 @@ export async function getJavaConfig(
         return javaConfigDisabledInLightWeightMode();
       }
       const isTest: boolean = await extensionApi.isTestFile(fileUri);
-      const sourceLevel: string = (
-        await extensionApi.getProjectSettings(fileUri, ['org.eclipse.jdt.core.compiler.compliance'])
-      )['org.eclipse.jdt.core.compiler.compliance'];
+      const COMPILER_COMPLIANCE_SETTING_KEY = 'org.eclipse.jdt.core.compiler.compliance';
+      const VM_LOCATION_SETTING_KEY = 'org.eclipse.jdt.ls.core.vm.location';
+      const projectSettings: { [name: string]: string } = await extensionApi.getProjectSettings(fileUri, [
+        COMPILER_COMPLIANCE_SETTING_KEY,
+        VM_LOCATION_SETTING_KEY
+      ]);
+      const sourceLevel = projectSettings[COMPILER_COMPLIANCE_SETTING_KEY];
+      const vmLocation = projectSettings[VM_LOCATION_SETTING_KEY];
       const classpathResult = await extensionApi.getClasspaths(fileUri, { scope: isTest ? 'test' : 'runtime' });
+
       return {
         projectRoot: classpathResult.projectRoot,
         sourceLevel,
         classpath: classpathResult.classpaths,
-        isTest
+        isTest,
+        vmLocation
       };
     }
   } catch (error) {

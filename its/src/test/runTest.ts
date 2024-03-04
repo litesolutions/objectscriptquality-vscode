@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -52,6 +52,32 @@ async function main() {
         extensionDevelopmentPath,
         extensionTestsPath,
         launchArgs: [`--user-data-dir=${userDataDir}`]
+      });
+    } catch (testError) {
+      testErrors.push(testError);
+    }
+
+    try {
+      await runTests({
+        // Use the specified `code` executable
+        vscodeExecutablePath,
+        extensionDevelopmentPath,
+        extensionTestsPath: path.resolve(__dirname, './secretsSuite'),
+        launchArgs: [path.resolve(__dirname, '../../samples/workspace-secrets.code-workspace'), `--user-data-dir=${userDataDir}`]
+      });
+    } catch (testError) {
+      testErrors.push(testError);
+    }
+
+    const pythonExtensionTestsPath = path.resolve(__dirname, './pythonSuite');
+    const pythonTestWorkspace = path.resolve(__dirname, '../../samples/workspace-python.code-workspace');
+    try {
+      await runTests({
+        // Use the specified `code` executable
+        vscodeExecutablePath,
+        extensionDevelopmentPath,
+        extensionTestsPath: pythonExtensionTestsPath,
+        launchArgs: [pythonTestWorkspace, `--user-data-dir=${userDataDir}`]
       });
     } catch (testError) {
       testErrors.push(testError);

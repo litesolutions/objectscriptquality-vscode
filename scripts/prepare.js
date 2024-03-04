@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -9,8 +9,23 @@ const fs = require('fs');
 const crypto = require('crypto');
 const request = require('request');
 
+const {
+  ARTIFACTORY_PRIVATE_READER_USERNAME,
+  ARTIFACTORY_PRIVATE_READER_PASSWORD
+} = process.env;
+
+const auth = {
+  user: ARTIFACTORY_PRIVATE_READER_USERNAME,
+  pass: ARTIFACTORY_PRIVATE_READER_PASSWORD,
+  sendImmediate: true
+};
+const credentialsDefined = ARTIFACTORY_PRIVATE_READER_USERNAME !== undefined
+    && ARTIFACTORY_PRIVATE_READER_PASSWORD !== undefined;
+
 const repoxRoot = 'https://repox.jfrog.io/repox/sonarsource';
 const jarDependencies = require('./dependencies.json');
+
+const HTTP_OK = 200;
 
 if (!fs.existsSync('server')) {
   fs.mkdirSync('server');
@@ -21,6 +36,10 @@ if (!fs.existsSync('analyzers')) {
 }
 
 jarDependencies.map(dep => {
+  if (dep.requiresCredentials && !credentialsDefined) {
+    console.info(`Skipping download of ${dep.artifactId}, no credentials`);
+    return;
+  }
   downloadIfNeeded(artifactUrl(dep), dep.output);
 });
 
@@ -33,21 +52,26 @@ function downloadIfNeeded(url, dest) {
   if (url.startsWith('file:')) {
     fs.createReadStream(url.substring('file:'.length)).pipe(fs.createWriteStream(dest));
   } else {
-    request(url + '.sha1', (error, response, body) => {
+    const callback = (error, response, body) => {
       if (error) {
         throw error;
-      } else if (response.statusCode !== 200) {
-        throw `Unable to get file ${url}: ${response.statusCode} ${body}`;
+      } else if (response.statusCode !== HTTP_OK) {
+        throw new Error(`Unable to get file ${url}: ${response.statusCode} ${body}`);
       } else {
         downloadIfChecksumMismatch(body, url, dest);
       }
-    });
+    };
+    if (credentialsDefined) {
+      request(url + '.sha1', {auth}, callback);
+    } else {
+      request(url + '.sha1', callback);
+    }
   }
 }
 
 function downloadIfChecksumMismatch(expectedChecksum, url, dest) {
   if (!fs.existsSync(dest)) {
-    request(url).pipe(fs.createWriteStream(dest));
+    sendRequest(url).pipe(fs.createWriteStream(dest));
   } else {
     fs.createReadStream(dest)
       .pipe(crypto.createHash('sha1').setEncoding('hex'))
@@ -55,17 +79,25 @@ function downloadIfChecksumMismatch(expectedChecksum, url, dest) {
         const sha1 = this.read();
         if (expectedChecksum !== sha1) {
           console.info(`Checksum mismatch for '${dest}'. Will download it!`);
-          request(url)
+          sendRequest(url)
             .on('error', function (err) {
-              throw error;
+              throw err;
             })
             .on('response', function (response) {
-              if (response.statusCode !== 200) {
-                throw `Unable to get file ${url}: ${response.statusCode}`;
+              if (response.statusCode !== HTTP_OK) {
+                throw new Error(`Unable to get file ${url}: ${response.statusCode}`);
               }
             })
             .pipe(fs.createWriteStream(dest));
         }
       });
+  }
+}
+
+function sendRequest(url) {
+  if (credentialsDefined) {
+    return request(url, { auth });
+  } else {
+    return request(url);
   }
 }

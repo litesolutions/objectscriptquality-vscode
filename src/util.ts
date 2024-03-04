@@ -1,12 +1,13 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 'use strict';
 
 import * as child_process from 'child_process';
+import * as path from 'path';
 import * as vscode from 'vscode';
 
 export function startedInDebugMode(process: NodeJS.Process): boolean {
@@ -71,4 +72,8 @@ export function execChildProcess(process: string, workingDirectory: string, chan
       }
     );
   });
+}
+
+export function resolveExtensionFile(...segments: string[]) {
+  return vscode.Uri.file(path.join(extensionPath, ...segments));
 }
