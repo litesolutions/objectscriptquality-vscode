@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -12,6 +12,8 @@ const request = require('request');
 const repoxRoot = 'https://repox.jfrog.io/repox/sonarsource';
 const jarDependencies = require('./dependencies.json');
 
+const HTTP_OK = 200;
+
 if (!fs.existsSync('server')) {
   fs.mkdirSync('server');
 }
@@ -21,7 +23,7 @@ if (!fs.existsSync('analyzers')) {
 }
 
 jarDependencies.map(dep => {
-  downloadIfNeeded(artifactUrl(dep), dep.output);
+   downloadIfNeeded(artifactUrl(dep), dep.output);
 });
 
 function artifactUrl(dep) {
@@ -36,8 +38,8 @@ function downloadIfNeeded(url, dest) {
     request(url + '.sha1', (error, response, body) => {
       if (error) {
         throw error;
-      } else if (response.statusCode !== 200) {
-        throw `Unable to get file ${url}: ${response.statusCode} ${body}`;
+      } else if (response.statusCode !== HTTP_OK) {
+        throw new Error(`Unable to get file ${url}: ${response.statusCode} ${body}`);
       } else {
         downloadIfChecksumMismatch(body, url, dest);
       }
@@ -57,11 +59,11 @@ function downloadIfChecksumMismatch(expectedChecksum, url, dest) {
           console.info(`Checksum mismatch for '${dest}'. Will download it!`);
           request(url)
             .on('error', function (err) {
-              throw error;
+              throw err;
             })
             .on('response', function (response) {
-              if (response.statusCode !== 200) {
-                throw `Unable to get file ${url}: ${response.statusCode}`;
+              if (response.statusCode !== HTTP_OK) {
+                throw new Error(`Unable to get file ${url}: ${response.statusCode}`);
               }
             })
             .pipe(fs.createWriteStream(dest));

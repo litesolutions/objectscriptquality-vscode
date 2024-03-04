@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -70,7 +70,7 @@ export class AllRulesTreeDataProvider implements VSCode.TreeDataProvider<AllRule
       .then(response => {
         // Render rules under language nodes
         if (node) {
-          return response[node.label]
+          return response[node.label as string]
             .map(rule => {
               rule.levelFromConfig = localRuleConfig.get(rule.key, {})['level'];
               return rule;
@@ -119,7 +119,7 @@ export class AllRulesTreeDataProvider implements VSCode.TreeDataProvider<AllRule
   }
 
   refresh() {
-    this._onDidChangeTreeData.fire();
+    this._onDidChangeTreeData.fire(null);
   }
 
   filter(level?: ConfigLevel) {
@@ -138,5 +138,5 @@ export class AllRulesTreeDataProvider implements VSCode.TreeDataProvider<AllRule
 }
 
 function byName(r1: Rule, r2: Rule) {
-  return r1.name.toLowerCase() < r2.name.toLowerCase() ? -1 : r1.name.toLowerCase() > r2.name.toLowerCase() ? 1 : 0;
+  return r1.name.toLowerCase().localeCompare(r2.name.toLowerCase());
 }

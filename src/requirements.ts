@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
@@ -22,7 +22,7 @@ import * as util from './util';
 
 const isWindows = process.platform.indexOf('win') === 0;
 const JAVA_FILENAME = `java${isWindows ? '.exe' : ''}`;
-const JAVA_HOME_CONFIG = 'sonarlint.ls.javaHome';
+export const JAVA_HOME_CONFIG = 'sonarlint.ls.javaHome';
 
 export interface RequirementsData {
   javaHome: string;

@@ -12,7 +12,7 @@
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "engines": {
-    "vscode": "^1.37.0"
+    "vscode": "^1.52.0"
   },
   "categories": [
     "Linters"
@@ -28,7 +28,8 @@
     "onLanguage:objectscript",
     "onLanguage:objectscript-class",
     "onCommand:SonarLint.UpdateAllBindings",
-    "onView:SonarLint.AllRules"
+    "onView:SonarLint.AllRules",
+    "onView:SonarLint.IssueLocations"
   ],
   "extensionDependencies": [
     "vscode.typescript-language-features"
@@ -165,12 +166,17 @@
         "sonarlint.ls.javaHome": {
           "type": "string",
           "markdownDescription": "Path to a Java Runtime Environment (8 or more recent) used to launch the SonarLint Language Server. \n* On Windows, backslashes must be escaped, e.g. `C:\\\\Program Files\\\\Java\\\\jdk1.8.0_161` \n* On macOS, this path should include the `/Contents/Home` directory, e.g `/Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home`",
-          "scope": "window"
+          "scope": "machine"
         },
         "sonarlint.ls.vmargs": {
           "type": "string",
           "markdownDescription": "Extra JVM arguments used to launch the SonarLint Language Server. e.g. `-Xmx1024m`",
-          "scope": "window"
+          "scope": "machine"
+        },
+        "sonarlint.pathToNodeExecutable": {
+          "type": "string",
+          "markdownDescription": "Path to a Node.js executable (8 or more recent) used to analyze JavaScript and TypeScript code. \nOn Windows, backslashes must be escaped, e.g. `C:\\\\Program Files\\\\NodeJS\\\\12-lts\\\\bin\\\\node.exe`",
+          "scope": "machine"
         },
         "sonarlint.connectedMode.servers": {
           "deprecationMessage": "The setting is deprecated. Use `sonarlint.connectedMode.connections.sonarqube` or `sonarlint.connectedMode.connections.sonarcloud` instead.",
@@ -204,7 +210,7 @@
           "type": "array",
           "scope": "application",
           "default": [],
-          "markdownDescription": "Configure connection(s) to [SonarQube](https://sonarqube.org). Don't forget to also configure the project binding in `#sonarlint.connectedMode.project#`.\n\nExample:\n\n    \"sonarlint.connectedMode.connections.sonarqube\": [\n      {\n        \"serverUrl\": \"https://sonar.mycompany.com\",\n        \"token\": \"V2VkIE1...\"\n      }\n    ]\n\nSpecify a `connectionId` if you want to define multiple connections.",
+          "markdownDescription": "Configure connection(s) to [SonarQube](https://sonarqube.org). Don't forget to also configure the project binding in `#sonarlint.connectedMode.project#`.\n\nExample:\n\n    \"sonarlint.connectedMode.connections.sonarqube\": [\n      {\n        \"serverUrl\": \"https://sonar.mycompany.com\",\n        \"token\": \"V2VkIE1...\"\n      }\n    ]\n\nSpecify a `connectionId` if you want to define multiple connections. Add `\"disableNotifications\": true` to disable notifications.",
           "examples": [
             {
               "serverUrl": "https://<myServerUrl>",
@@ -230,6 +236,10 @@
               "token": {
                 "type": "string",
                 "description": "Token generated from My Account>Security in SonarQube"
+              },
+              "disableNotifications": {
+                "type": "boolean",
+                "description": "SonarLint will show notifications for bound projects when there are new issues assigned to you, or when the quality gate status changed. Set to false to disable all notifications for projects bound to this connection."
               }
             },
             "additionalProperties": false,
@@ -243,7 +253,7 @@
           "type": "array",
           "scope": "application",
           "default": [],
-          "markdownDescription": "Configure connection(s) to [SonarCloud](https://sonarcloud.io). Don't forget to also configure the project binding in `#sonarlint.connectedMode.project#`.\nIf you have projects in multiple SonarCloud organizations, simply declare multiple connections.\n\nExample:\n\n    \"sonarlint.connectedMode.connections.sonarcloud\": [\n      {\n        \"organizationKey\": \"myOrg\",\n        \"token\": \"V2VkIE1...\"\n      }\n    ]\n\nSpecify a `connectionId` if you want to define multiple connections.",
+          "markdownDescription": "Configure connection(s) to [SonarCloud](https://sonarcloud.io). Don't forget to also configure the project binding in `#sonarlint.connectedMode.project#`.\nIf you have projects in multiple SonarCloud organizations, simply declare multiple connections.\n\nExample:\n\n    \"sonarlint.connectedMode.connections.sonarcloud\": [\n      {\n        \"organizationKey\": \"myOrg\",\n        \"token\": \"V2VkIE1...\"\n      }\n    ]\n\nSpecify a `connectionId` if you want to define multiple connections. Add `\"disableNotifications\": true` to disable notifications.",
           "examples": [
             {
               "organizationKey": "<myOrgKey>",
@@ -269,6 +279,10 @@
               "token": {
                 "type": "string",
                 "description": "Token generated from [My Account>Security](https://sonarcloud.io/account/security/) in SonarCloud"
+              },
+              "disableNotifications": {
+                "type": "boolean",
+                "description": "SonarLint will show notifications for bound projects when there are new issues assigned to you, or when the quality gate status changed. Set to false to disable all notifications for projects bound to this connection."
               }
             },
             "additionalProperties": false,
@@ -339,6 +353,11 @@
         "category": "SonarLint"
       },
       {
+        "command": "SonarLint.ShowSonarLintOutput",
+        "title": "Show SonarLint Output",
+        "category": "SonarLint"
+      },
+      {
         "command": "SonarLint.DeactivateRule",
         "title": "Deactivate",
         "icon": {
@@ -378,6 +397,11 @@
         "command": "SonarLint.FindRuleByKey",
         "title": "Find Rule By Key",
         "enablement": "view == SonarLint.AllRules"
+      },
+      {
+        "command": "SonarLint.ClearLocations",
+        "title": "Clear",
+        "enablement": "view == SonarLint.IssueLocations"
       }
     ],
     "views": {
@@ -385,9 +409,19 @@
         {
           "id": "SonarLint.AllRules",
           "name": "SonarLint Rules"
+        },
+        {
+          "id": "SonarLint.IssueLocations",
+          "name": "SonarLint Issue Locations"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "SonarLint.IssueLocations",
+        "contents": "No locations to show.\nUse \"Show all locations\" code action from a SonarLint issue."
+      }
+    ],
     "menus": {
       "view/title": [
         {
@@ -408,6 +442,11 @@
         {
           "command": "SonarLint.FindRuleByKey",
           "when": "view == SonarLint.AllRules"
+        },
+        {
+          "command": "SonarLint.ClearLocations",
+          "when": "view == SonarLint.IssueLocations",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -422,7 +461,54 @@
           "group": "inline"
         }
       ]
-    }
+    },
+    "colors": [
+      {
+        "id": "sonarlint.locations.background",
+        "description": "Background color for highlighted secondary locations of SonarLint issues",
+        "defaults": {
+          "light": "#f2dede",
+          "dark": "#523e3e",
+          "highContrast": "#523e3e"
+        }
+      },
+      {
+        "id": "sonarlint.locations.indexText",
+        "description": "Text color for secondary location index of SonarLint issues",
+        "defaults": {
+          "light": "#fff",
+          "dark": "#ccc",
+          "highContrast": "#ccc"
+        }
+      },
+      {
+        "id": "sonarlint.locations.indexBackground",
+        "description": "Background color for secondary location index of SonarLint issues",
+        "defaults": {
+          "light": "#d18582",
+          "dark": "#74232f",
+          "highContrast": "#74232f"
+        }
+      },
+      {
+        "id": "sonarlint.locations.indexSelectedText",
+        "description": "Text color for active secondary location index of SonarLint issues",
+        "defaults": {
+          "light": "#fff",
+          "dark": "#fff",
+          "highContrast": "#fff"
+        }
+      },
+      {
+        "id": "sonarlint.locations.indexSelectedBackground",
+        "description": "Background color for active secondary location index of SonarLint issues",
+        "defaults": {
+          "light": "#a4030f",
+          "dark": "#b4131f",
+          "highContrast": "#b4131f"
+        }
+      }
+    ]
   },
   "main": "./dist/extension",
   "files": [
@@ -441,20 +527,22 @@
   "dependencies": {
     "expand-home-dir": "0.0.3",
     "find-java-home": "1.1.0",
-    "follow-redirects": "1.10.0",
-    "inly": "4.0.4",
-    "open": "6.0.0",
-    "path-exists": "3.0.0",
+    "follow-redirects": "1.13.0",
+    "inly": "4.0.8",
+    "luxon": "1.26.0",
+    "open": "7.3.0",
+    "path-exists": "4.0.0",
     "compare-versions": "3.6.0",
-    "vscode-languageclient": "5.2.1"
+    "vscode-languageclient": "7.0.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.10",
     "@types/follow-redirects": "1.8.0",
     "@types/glob": "5.0.30",
+    "@types/luxon": "1.26.2",
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.17.17",
-    "@types/vscode": "^1.37.0",
+    "@types/vscode": "^1.41.0",
     "chai": "^4.2.0",
     "crypto": "^0.0.3",
     "dateformat": "^2.0.0",

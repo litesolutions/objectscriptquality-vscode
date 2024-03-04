@@ -1,26 +1,34 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2021 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 'use strict';
-import * as VSCode from 'vscode';
-import * as Path from 'path';
-import * as FS from 'fs';
-import * as Net from 'net';
 import * as ChildProcess from 'child_process';
-import { LanguageClientOptions, StreamInfo } from 'vscode-languageclient';
-
-import * as util from './util';
-import { AllRulesTreeDataProvider, Rule, RuleNode, ConfigLevel } from './rules';
-import { Commands } from './commands';
+import * as FS from 'fs';
+import { DateTime } from 'luxon';
+import * as Net from 'net';
+import * as Path from 'path';
+import * as VSCode from 'vscode';
+import { LanguageClientOptions, StreamInfo } from 'vscode-languageclient/node';
 import { SonarLintExtendedLanguageClient } from './client';
-import { resolveRequirements, RequirementsData, installManagedJre } from './requirements';
+import { Commands } from './commands';
+import {
+  hideSecurityHotspot,
+  HotspotsCodeActionProvider,
+  hotspotsCollection,
+  showHotspotDescription,
+  showSecurityHotspot
+} from './hotspots';
+import { getJavaConfig, installClasspathListener } from './java';
+import { LocationTreeItem, navigateToLocation, SecondaryLocationsTree } from './locations';
+import * as protocol from './protocol';
+import { installManagedJre, JAVA_HOME_CONFIG, RequirementsData, resolveRequirements } from './requirements';
 import { computeRuleDescPanelContent } from './rulepanel';
-import { ShowRuleDescriptionRequest, GetJavaConfigRequest } from './protocol';
-import { installClasspathListener, getJavaConfig } from './java';
+import { AllRulesTreeDataProvider, ConfigLevel, Rule, RuleNode } from './rules';
 import { code2ProtocolConverter, protocol2CodeConverter } from './uri';
+import * as util from './util';
 
 declare let v8debug: object;
 const DEBUG = typeof v8debug === 'object' || util.startedInDebugMode(process);
@@ -35,6 +43,8 @@ const DOCUMENT_SELECTOR = [
 
 let sonarlintOutput: VSCode.OutputChannel;
 let ruleDescriptionPanel: VSCode.WebviewPanel;
+let secondaryLocationsTree: SecondaryLocationsTree;
+let issueLocationsView: VSCode.TreeView<LocationTreeItem>;
 let languageClient: SonarLintExtendedLanguageClient;
 
 export function logToSonarLintOutput(message) {
@@ -43,7 +53,7 @@ export function logToSonarLintOutput(message) {
   }
 }
 
-function runJavaServer(context: VSCode.ExtensionContext): Thenable<StreamInfo> {
+function runJavaServer(context: VSCode.ExtensionContext): Promise<StreamInfo> {
   return resolveRequirements(context)
     .catch(error => {
       //show error
@@ -116,7 +126,8 @@ function languageServerCommand(
   }
   const vmargs = getSonarLintConfiguration().get('ls.vmargs', '');
   parseVMargs(params, vmargs);
-  params.push('-jar', serverJar, '' + port);
+  params.push('-jar', serverJar, `${port}`);
+  //params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjava.jar')));
   params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'sonarjs.jar')));
   params.push(toUrl(Path.resolve(context.extensionPath, 'analyzers', 'objectscriptquality.jar')));
   return { command: javaExecutablePath, args: params };
@@ -163,7 +174,7 @@ function findTypeScriptLocation(): string | undefined {
         return configuredTsPath;
       }
       logToSonarLintOutput(
-        `Unable to locate TypeScript module in "${configuredTsPath}". Falling back to the VSCode"s one at "${bundledTypeScriptPath}"`
+        `Unable to locate TypeScript module in "${configuredTsPath}". Falling back to the VSCode's one at "${bundledTypeScriptPath}"`
       );
     }
     return bundledTypeScriptPath;
@@ -208,11 +219,15 @@ export function activate(context: VSCode.ExtensionContext) {
 
   const tsPath = findTypeScriptLocation();
 
+  const pythonWatcher = VSCode.workspace.createFileSystemWatcher('**/*.py');
+  context.subscriptions.push(pythonWatcher);
+
   // Options to control the language client
   const clientOptions: LanguageClientOptions = {
     documentSelector: DOCUMENT_SELECTOR,
     synchronize: {
-      configurationSection: 'sonarlint'
+      configurationSection: 'sonarlint',
+      fileEvents: pythonWatcher,
     },
     uriConverters: {
       code2Protocol: code2ProtocolConverter,
@@ -225,7 +240,8 @@ export function activate(context: VSCode.ExtensionContext) {
         telemetryStorage: Path.resolve(context.extensionPath, '..', 'sonarlint_usage'),
         productName: 'SonarLint VSCode',
         productVersion: util.packageJson.version,
-        ideVersion: VSCode.version,
+        appName: VSCode.env.appName,
+        workspaceName: VSCode.workspace.name,
         typeScriptLocation: tsPath ? Path.dirname(Path.dirname(tsPath)) : undefined
       };
     },
@@ -251,6 +267,15 @@ export function activate(context: VSCode.ExtensionContext) {
     treeDataProvider: allRulesTreeDataProvider
   });
   context.subscriptions.push(allRulesView);
+
+  secondaryLocationsTree = new SecondaryLocationsTree();
+  issueLocationsView = VSCode.window.createTreeView('SonarLint.IssueLocations', {
+    treeDataProvider: secondaryLocationsTree
+  });
+  context.subscriptions.push(issueLocationsView);
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.SHOW_ALL_LOCATIONS, showAllLocations));
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.CLEAR_LOCATIONS, clearLocations));
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.NAVIGATE_TO_LOCATION, navigateToLocation));
 
   context.subscriptions.push(VSCode.commands.registerCommand(Commands.DEACTIVATE_RULE, toggleRule('off')));
   context.subscriptions.push(VSCode.commands.registerCommand(Commands.ACTIVATE_RULE, toggleRule('on')));
@@ -282,8 +307,24 @@ export function activate(context: VSCode.ExtensionContext) {
         });
     })
   );
+  context.subscriptions.push(
+    VSCode.commands.registerCommand(Commands.SHOW_SONARLINT_OUTPUT, () => {
+      sonarlintOutput.show();
+    })
+  );
 
   context.subscriptions.push(VSCode.commands.registerCommand(Commands.INSTALL_MANAGED_JRE, installManagedJre));
+
+  context.subscriptions.push(hotspotsCollection);
+  context.subscriptions.push(VSCode.languages.registerCodeActionsProvider(
+      { scheme: 'file' },
+      new HotspotsCodeActionProvider(),
+      { providedCodeActionKinds: [VSCode.CodeActionKind.Empty] }
+    )
+  );
+
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.HIDE_HOTSPOT, hideSecurityHotspot));
+  context.subscriptions.push(VSCode.commands.registerCommand(Commands.SHOW_HOTSPOT_DESCRIPTION, showHotspotDescription));
 
   VSCode.workspace.onDidChangeConfiguration(async event => {
     if (event.affectsConfiguration('sonarlint.rules')) {
@@ -304,8 +345,7 @@ export function activate(context: VSCode.ExtensionContext) {
 }
 
 function installCustomRequestHandlers(context: VSCode.ExtensionContext) {
-  languageClient.onRequest(ShowRuleDescriptionRequest.type, params => {
-    const ruleDescPanelContent = computeRuleDescPanelContent(context, params);
+  languageClient.onRequest(protocol.ShowRuleDescriptionRequest.type, params => {
     if (!ruleDescriptionPanel) {
       ruleDescriptionPanel = VSCode.window.createWebviewPanel(
         'sonarlint.RuleDesc',
@@ -323,10 +363,52 @@ function installCustomRequestHandlers(context: VSCode.ExtensionContext) {
         context.subscriptions
       );
     }
+    const ruleDescPanelContent = computeRuleDescPanelContent(context, ruleDescriptionPanel.webview, params);
     ruleDescriptionPanel.webview.html = ruleDescPanelContent;
+    ruleDescriptionPanel.iconPath = {
+      light: util.resolveExtensionFile('images/sonarlint.svg'),
+      dark: util.resolveExtensionFile('images/sonarlint.svg')
+    };
     ruleDescriptionPanel.reveal();
   });
-  languageClient.onRequest(GetJavaConfigRequest.type, fileUri => getJavaConfig(languageClient, fileUri));
+
+  languageClient.onRequest(protocol.GetJavaConfigRequest.type, fileUri => getJavaConfig(languageClient, fileUri));
+  languageClient.onRequest(protocol.ShowSonarLintOutput.type,
+    () => VSCode.commands.executeCommand(Commands.SHOW_SONARLINT_OUTPUT)
+  );
+  languageClient.onRequest(protocol.OpenJavaHomeSettings.type,
+    () => VSCode.commands.executeCommand(Commands.OPEN_SETTINGS, JAVA_HOME_CONFIG)
+  );
+  languageClient.onRequest(protocol.OpenPathToNodeSettings.type,
+    () => VSCode.commands.executeCommand(Commands.OPEN_SETTINGS, 'sonarlint.pathToNodeExecutable')
+  );
+  languageClient.onRequest(protocol.BrowseTo.type,
+    browseTo => VSCode.commands.executeCommand(Commands.OPEN_BROWSER, VSCode.Uri.parse(browseTo))
+  );
+  languageClient.onRequest(protocol.OpenConnectionSettings.type,
+    isSonarCloud => {
+      const targetSection = `sonarlint.connectedMode.connections.${isSonarCloud ? 'sonarcloud' : 'sonarqube'}`;
+      return VSCode.commands.executeCommand(Commands.OPEN_SETTINGS, targetSection);
+    }
+  );
+  languageClient.onRequest(protocol.ShowHotspotRequest.type, showSecurityHotspot);
+  languageClient.onRequest(protocol.ShowTaintVulnerabilityRequest.type, showAllLocations);
+}
+
+async function showAllLocations(issue: protocol.Issue) {
+  await secondaryLocationsTree.showAllLocations(issue);
+  if (issue.creationDate) {
+    const createdAgo = DateTime.fromISO(issue.creationDate).toLocaleString(DateTime.DATETIME_MED);
+    issueLocationsView.message = `Analyzed ${createdAgo} on '${issue.connectionId}'`;
+  } else {
+    issueLocationsView.message = null;
+  }
+  issueLocationsView.reveal(secondaryLocationsTree.getChildren(null)[0]);
+}
+
+function clearLocations() {
+  secondaryLocationsTree.hideLocations();
+  issueLocationsView.message = null;
 }
 
 function onConfigurationChange() {
@@ -336,7 +418,8 @@ function onConfigurationChange() {
     }
     const newConfig = getSonarLintConfiguration();
 
-    const sonarLintLsConfigChanged = hasSonarLintLsConfigChanged(currentConfig, newConfig);
+    const sonarLintLsConfigChanged =
+      hasSonarLintLsConfigChanged(currentConfig, newConfig) || hasNodeJsConfigChanged(currentConfig, newConfig);
 
     if (sonarLintLsConfigChanged) {
       const msg = 'SonarLint Language Server configuration changed, please restart VS Code.';
@@ -354,6 +437,10 @@ function onConfigurationChange() {
 
 function hasSonarLintLsConfigChanged(oldConfig, newConfig) {
   return !configKeyEquals('ls.javaHome', oldConfig, newConfig) || !configKeyEquals('ls.vmargs', oldConfig, newConfig);
+}
+
+function hasNodeJsConfigChanged(oldConfig, newConfig) {
+  return !configKeyEquals('pathToNodeExecutable', oldConfig, newConfig);
 }
 
 function configKeyEquals(key, oldConfig, newConfig) {
