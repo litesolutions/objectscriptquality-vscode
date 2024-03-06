@@ -1,3 +1,12 @@
+## 3.0.0
+* OjectscriptQuality 3.4.5
+* Update sonarlint-vscode to 3.0.0+37760
+* Update sonarlint-language server to 2.0.0.377377-lite
+* Update sonarlint-core to 7.0.0.37656-lite
+
+## 2.5.1
+* OjectscriptQuality 3.4.2
+
 ## 2.3.0
 * OjectscriptQuality 3.2.2
 
