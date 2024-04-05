@@ -10,3 +10,9 @@ coverage
 its/userdir
 !its/userdir/User
 !its/userdir/User/settings.json
+test/userdir
+!test/userdir/User
+!test/userdir/User/settings.json
+its/extdir*
+.DS_Store
+omnisharp

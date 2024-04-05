@@ -1,18 +1,20 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2023 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 import * as cp from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 
-import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from 'vscode-test';
-import { readdirSync } from 'fs';
+import { downloadAndUnzipVSCode, resolveCliPathFromVSCodeExecutablePath, runTests } from '@vscode/test-electron';
 
 const XVFB_DISPLAY = ':10';
 
 async function main() {
+  let extensionsDir = '';
+  let exitCode = 0;
   try {
     const xDisplay = process.env['DISPLAY'];
     if (xDisplay) {
@@ -23,68 +25,73 @@ async function main() {
     }
 
     const userDataDir = path.resolve(__dirname, '../../userdir');
+    extensionsDir = fs.mkdtempSync(path.resolve(__dirname, '../../extdir-'));
+
     // The folder containing the Extension Manifest package.json
     // Passed to `--extensionDevelopmentPath`
     const extensionDevelopmentPath = path.resolve(__dirname, '../../');
-
-    // The path to test runner
-    // Passed to --extensionTestsPath
-    const extensionTestsPath = path.resolve(__dirname, './suite');
 
     const vscodeVersion = process.env['VSCODE_VERSION'];
     const vscodeExecutablePath = await downloadAndUnzipVSCode(vscodeVersion);
     const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
 
-    var vsixes = readdirSync('..').filter(fn => fn.endsWith('.vsix'));
+    const vsixes = fs.readdirSync('..').filter(fn => fn.endsWith('.vsix'));
     // Use cp.spawn / cp.exec for custom setup
-    cp.spawnSync(cliPath, ['--install-extension', '../' + vsixes[0]], {
+    cp.spawnSync(cliPath, [`--extensions-dir=${extensionsDir}`, '--install-extension', '../' + vsixes[0]], {
       encoding: 'utf-8',
       stdio: 'inherit'
     });
 
     const testErrors = [];
 
-    // run the integration test
-    try {
-      await runTests({
-        // Use the specified `code` executable
-        vscodeExecutablePath,
-        extensionDevelopmentPath,
-        extensionTestsPath,
-        launchArgs: [`--user-data-dir=${userDataDir}`]
-      });
-    } catch (testError) {
-      testErrors.push(testError);
-    }
+    const runTestSuite = async (suiteDir: string, workspaceDir?: string) => {
+      const launchArgs = [`--user-data-dir=${userDataDir}`, `--extensions-dir=${extensionsDir}`];
+      if (workspaceDir) {
+        launchArgs.unshift(path.resolve(__dirname, `../../samples/${workspaceDir}`));
+      }
+      try {
+        await runTests({
+          // Use the specified `code` executable
+          vscodeExecutablePath,
+          extensionDevelopmentPath,
+          extensionTestsPath: path.resolve(__dirname, suiteDir),
+          launchArgs
+        });
+      } catch (testError) {
+        testErrors.push(testError);
+      }
+    };
 
-    const javaExtensionTestsPath = path.resolve(__dirname, './javaSuite');
-    const javaTestWorkspace = path.resolve(__dirname, '../../samples/workspace-java.code-workspace');
+    // run the integration tests
+    await runTestSuite('./suite');
+    await runTestSuite('./secretsSuite', 'workspace-secrets.code-workspace');
+    await runTestSuite('./pythonSuite', 'workspace-python.code-workspace');
+    await runTestSuite('./cfamilySuite', 'workspace-cfamily.code-workspace');
 
     ['redhat.java', 'vscjava.vscode-maven'].forEach(requiredExtensionId => {
-      cp.spawnSync(cliPath, ['--install-extension', requiredExtensionId], {
+      cp.spawnSync(cliPath, [`--extensions-dir=${extensionsDir}`, '--install-extension', requiredExtensionId], {
         encoding: 'utf-8',
         stdio: 'inherit'
       });
     });
-
-    try {
-      await runTests({
-        // Use the specified `code` executable
-        vscodeExecutablePath,
-        extensionDevelopmentPath,
-        extensionTestsPath: javaExtensionTestsPath,
-        launchArgs: [javaTestWorkspace, `--user-data-dir=${userDataDir}`]
-      });
-    } catch (testError) {
-      testErrors.push(testError);
-    }
+    await runTestSuite('./javaSuite', 'workspace-java.code-workspace');
+    await runTestSuite('./csharpsuite', 'workspace-csharp.code-workspace');
 
     if (testErrors.length > 0) {
       throw new Error('At least one test suite failed, please check logs above for actual failure.');
     }
   } catch (err) {
     console.error('Failed to run tests', err);
-    process.exit(1);
+    exitCode = 1;
+  } finally {
+    if (extensionsDir !== '' && fs.existsSync(extensionsDir)) {
+      try {
+        fs.rmdirSync(extensionsDir, { recursive: true });
+      } catch (e) {
+        // NOP
+      }
+    }
+    process.exit(exitCode);
   }
 }
 

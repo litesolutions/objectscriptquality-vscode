@@ -25,17 +25,17 @@ You will benefit from the following code analyzers: [objectscriptQuality](https:
 
 ## Requirements
 
-The only thing you need is a Java Runtime (JRE) 8 installed on your computer.
+The only thing you need is a Java Runtime (JRE) 17+ installed on your computer.
 
 objectscriptQuality should automatically find it but you can also explicitly set the path where the JRE is installed using the 'objectscriptQuality.ls.javaHome' variable in VS Code settings. For example:
 
     {
-        "objectscriptQuality.ls.javaHome": "C:\Program Files\Java\jre1.8.0_131"
+        "objectscriptQuality.ls.javaHome": "C:\Program Files\Java\jdk-17"
     }
 
 ### Connected mode
 
-You can connect objectscriptQuality to SonarQube >= 5.6 or SonarCloud to benefit from the same rules and settings that are used to inspect your project on the server. objectscriptQuality then hides in VSCode the issues that are marked as **Won’t Fix** or **False Positive**.
+You can connect objectscriptQuality to SonarQube >= 7.9 or SonarCloud to benefit from the same rules and settings that are used to inspect your project on the server. objectscriptQuality then hides in VSCode the issues that are marked as **Won’t Fix** or **False Positive**.
 
 To configure the connection, have a look at objectscriptQuality in default user settings.
 

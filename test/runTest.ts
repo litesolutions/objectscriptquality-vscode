@@ -1,13 +1,13 @@
 /* --------------------------------------------------------------------------------------------
  * SonarLint for VisualStudio Code
- * Copyright (C) 2017-2020 SonarSource SA
+ * Copyright (C) 2017-2023 SonarSource SA
  * sonarlint@sonarsource.com
  * Licensed under the LGPLv3 License. See LICENSE.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import * as path from 'path';
 import * as fs from 'fs';
+import * as path from 'path';
+import { runTests } from '@vscode/test-electron';
 import { instrument } from './coverage';
-import { runTests } from 'vscode-test';
 
 const XVFB_DISPLAY = ':10';
 
@@ -24,15 +24,22 @@ function main() {
   // Passed to `--extensionDevelopmentPath`
   const extensionRootPath = path.resolve(__dirname, '../../');
   console.log('Extension root path: ' + extensionRootPath);
+  const userDataDir = path.resolve(extensionRootPath, 'test', 'userdir');
 
-  const launchArgs = [path.resolve(extensionRootPath, 'test/samples')];
+  const launchArgs = [
+    path.resolve(extensionRootPath, 'test/samples'),
+    '--disable-extensions',
+    '--disable-workspace-trust',
+    `--user-data-dir=${userDataDir}`,
+    '--password-store=basic'
+  ];
 
   const packageJsonPath = path.resolve(extensionRootPath, 'package.json');
   const package_json = fs.readFileSync(packageJsonPath, 'utf8');
-  var content = JSON.parse(package_json);
+  const content = JSON.parse(package_json);
 
   const extensionDevelopmentPath = extensionRootPath;
-  var outPath;
+  let outPath;
   if (process.argv.indexOf('--coverage') >= 0) {
     // Override main file path
     content.main = 'out-cov/src/extension';
