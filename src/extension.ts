@@ -227,7 +227,7 @@ export async function activate(context: VSCode.ExtensionContext) {
   // Create the language client and start the client.
   // id parameter is used to load 'sonarlint.trace.server' configuration
   languageClient = new SonarLintExtendedLanguageClient(
-    'objectscriptquality-vscode',
+    'sonarlint',
     'SonarLint Language Server',
     serverOptions,
     clientOptions

@@ -27,22 +27,14 @@ export function languageServerCommand(
     params.push('-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000,quiet=y');
     params.push('-Dsonarlint.telemetry.disabled=true');
   }
+  params.push('--add-opens=java.base/java.lang=ALL-UNNAMED');
   const vmargs = getSonarLintConfiguration().get('ls.vmargs', '');
   parseVMargs(params, vmargs);
   params.push('-jar', serverJar);
   params.push('-stdio');
   params.push('-analyzers');
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonargo.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarjava.jar'));
   params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarjs.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarphp.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarpython.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarhtml.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarxml.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarcfamily.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonartext.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonariac.jar'));
-  params.push(Path.resolve(context.extensionPath, 'analyzers', 'sonarlintomnisharp.jar'));
+  params.push(Path.resolve(context.extensionPath, 'analyzers', 'objectscriptquality.jar'));
 
   return { command: javaExecutablePath, args: params, transport: TransportKind.stdio };
 }

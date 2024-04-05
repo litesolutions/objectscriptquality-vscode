@@ -106,7 +106,7 @@ async function checkUpdate() {
   const dogfoodFile = await fetch(ARTIFACTORY_DOGFOOD_URL);
   if (dogfoodFile.status === 200) {
     const { version, url } = await dogfoodFile.json();
-    const installedSonarLint = vscode.extensions.getExtension('SonarSource.sonarlint-vscode');
+    const installedSonarLint = vscode.extensions.getExtension('litesolutions-es.objectscriptquality-vscode');
     if (
       installedSonarLint === undefined ||
       semver.compareBuild(installedSonarLint.packageJSON.version, version) < 0
@@ -130,7 +130,7 @@ async function updateAvailable(version: string, url: string, installedSonarLint:
 async function installAndRestart(version: string, url: string, installedSonarLint: any) {
   if(installedSonarLint) {
     statusBar.setStatus(Status.UNINSTALLING);
-    await(vscode.commands.executeCommand('workbench.extensions.uninstallExtension', 'SonarSource.sonarlint-vscode'));
+    await(vscode.commands.executeCommand('workbench.extensions.uninstallExtension', 'litesolutions-es.objectscriptquality-vscode'));
   }
   statusBar.setStatus(Status.DOWNLOADING);
   const vsixUri = await downloadVsix(version, url);
