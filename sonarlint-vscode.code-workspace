@@ -5,7 +5,12 @@
 	},
 	{
 		"path": "its"
+	},
+	{
+		"path": "dogfood"
 	}
 ],
-  "settings": {}
+  "settings": {
+		"sonarlint.testFilePattern": "**/*.test.ts"
+	}
 }

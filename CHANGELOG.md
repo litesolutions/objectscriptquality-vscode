@@ -1,3 +1,12 @@
+## 4.0.1
+* OjectscriptQuality 3.4.5
+* Based on Sonarlint VSCode 4.0.1+75740
+* Updated SonarLint Language Server to version 3.0.0.74514
+* Updated SonarLint Core to version 9.4.0.76070
+
+## 2.3.0
+* OjectscriptQuality 3.2.2
+
 ## 2.2.0
 * Based on Sonarlint VSCode 1.17.0
 * Updated SonarLint Language Server to version 1.5
