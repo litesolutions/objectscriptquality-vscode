@@ -52,5 +52,8 @@
     "arrowParens": "avoid",
     "trailingComma": "none",
     "bracketSpacing": true
+  },
+  "dependencies": {
+    "sonarlint-its": "file:"
   }
 }

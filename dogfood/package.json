@@ -76,6 +76,7 @@
     "webpack-cli": "4.10.0"
   },
   "dependencies": {
-    "semver": "^7.3.5"
+    "semver": "^7.3.5",
+    "sonarlint-dogfood": "file:"
   }
 }

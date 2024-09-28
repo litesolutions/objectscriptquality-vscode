@@ -1,3 +1,6 @@
+## 4.0.2
+* OjectscriptQuality 3.4.6
+
 ## 4.0.1
 * OjectscriptQuality 3.4.5
 * Based on Sonarlint VSCode 4.0.1+75740
